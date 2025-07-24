@@ -19,14 +19,14 @@ type Pair struct {
 }
 
 func (gr *GetReq) GetRespBody() ([]byte, int, error) {
-	bUrl := baseUrl(gr.Host, gr.Endpoint)
-	url := addParams(bUrl, gr.Params)
+	bUrl := gr.baseUrl()
+	url := gr.addParams(bUrl)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		fmt.Printf("Error occured: %e\n", err)
 		return nil, 0, err
 	}
-	addHdrs(req, gr.Headers)
+	gr.addHdrs(req)
 	body, status, err := ClientDo(req)
 	if err != nil {
 		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
@@ -34,40 +34,23 @@ func (gr *GetReq) GetRespBody() ([]byte, int, error) {
 	return body, status, nil
 }
 
-func Get(host string, end string, params []Pair, hdrs []Pair) ([]byte, int, error) {
-	bUrl := baseUrl(host, end)
-	url := addParams(bUrl, params)
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		fmt.Printf("Error occured: %e\n", err)
-		return nil, 0, err
-	}
-	addHdrs(req, hdrs)
-	body, status, err := ClientDo(req)
-	if err != nil {
-		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
-	}
-	return body, status, nil
-}
-
-func addParams(bUrl string, params []Pair) string {
+func (gr *GetReq) addParams(bUrl string) string {
 	var url string = bUrl + "?"
-	for i, p := range params {
+	for i, p := range gr.Params {
 		url = url + (p.Key + "=" + p.Val)
-		if i < len(params)-1 {
+		if i < len(gr.Params)-1 {
 			url += "&"
 		}
 	}
 	return url
 }
 
-func baseUrl(host string, end string) string {
-	return "https://" + host + end
+func (gr *GetReq) baseUrl() string {
+	return "https://" + gr.Host + gr.Endpoint
 }
 
-func addHdrs(r *http.Request, hdrs []Pair) {
-	for _, h := range hdrs {
+func (gr *GetReq) addHdrs(r *http.Request) {
+	for _, h := range gr.Headers {
 		r.Header.Add(h.Key, h.Val)
 	}
 }
