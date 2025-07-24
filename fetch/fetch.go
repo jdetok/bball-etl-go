@@ -11,6 +11,23 @@ type Pair struct {
 	Val string
 }
 
+func Get(host string, end string, params []Pair, hdrs []Pair) ([]byte, int, error) {
+	bUrl := baseUrl(host, end)
+	url := addParams(bUrl, params)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		fmt.Printf("Error occured: %e\n", err)
+		return nil, 0, err
+	}
+	addHdrs(req, hdrs)
+	body, status, err := ClientDo(req)
+	if err != nil {
+		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
+	}
+	return body, status, nil
+}
+
 func addParams(bUrl string, params []Pair) string {
 	var url string = bUrl + "?"
 	for i, p := range params {
@@ -50,21 +67,4 @@ func ClientDo(req *http.Request) ([]byte, int, error) {
 		return nil, res.StatusCode, err
 	}
 	return body, res.StatusCode, nil
-}
-
-func Get(host string, end string, params []Pair, hdrs []Pair) ([]byte, int, error) {
-	bUrl := baseUrl(host, end)
-	url := addParams(bUrl, params)
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		fmt.Printf("Error occured: %e\n", err)
-		return nil, 0, err
-	}
-	addHdrs(req, hdrs)
-	body, status, err := ClientDo(req)
-	if err != nil {
-		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
-	}
-	return body, status, nil
 }
