@@ -17,9 +17,9 @@ var commonAllPlayers = GetReq{
 	Endpoint: "/stats/commonallplayers",
 	Headers:  HDRS,
 	Params: []Pair{
-		{"LeagueID", "10"},
+		{"LeagueID", "00"},
 		{"IsOnlyCurrentSeason", "1"},
-		{"PlayerID", "2024-25"}},
+		{"Season", "2024-25"}},
 }
 
 func main() {
