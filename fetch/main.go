@@ -12,6 +12,13 @@ var commonPlayerInfo = GetReq{
 	Params:   []Pair{{"LeagueID", "10"}, {"PlayerID", "2544"}},
 }
 
+var playerAwards = GetReq{
+	Host:     HOST,
+	Endpoint: "/stats/playerawards",
+	Headers:  HDRS,
+	Params:   []Pair{{"PlayerID", "2544"}},
+}
+
 var commonAllPlayers = GetReq{
 	Host:     HOST,
 	Endpoint: "/stats/commonallplayers",
@@ -24,7 +31,8 @@ var commonAllPlayers = GetReq{
 
 func main() {
 	// body, _, err := commonPlayerInfo.GetRespBody()
-	body, _, err := commonAllPlayers.GetRespBody()
+	// body, _, err := commonAllPlayers.GetRespBody()
+	body, _, err := playerAwards.GetRespBody()
 	if err != nil {
 		log.Fatal(err)
 	}
