@@ -18,8 +18,16 @@ var params = []Pair{
 	{"PlayerID", "2544"},
 }
 
+var getReq = GetReq{
+	Host:     "stats.nba.com",
+	Endpoint: "/stats/commonplayerinfo",
+	Params:   params,
+	Headers:  hdrs,
+}
+
 func main() {
-	body, _, err := Get("stats.nba.com", "/stats/commonplayerinfo", params, hdrs)
+	body, _, err := getReq.GetRespBody()
+	// body, _, err := Get("stats.nba.com", "/stats/commonplayerinfo", params, hdrs)
 	if err != nil {
 		log.Fatal(err)
 	}

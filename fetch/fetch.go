@@ -6,9 +6,32 @@ import (
 	"net/http"
 )
 
+type GetReq struct {
+	Host     string
+	Endpoint string
+	Params   []Pair
+	Headers  []Pair
+}
+
 type Pair struct {
 	Key string
 	Val string
+}
+
+func (gr *GetReq) GetRespBody() ([]byte, int, error) {
+	bUrl := baseUrl(gr.Host, gr.Endpoint)
+	url := addParams(bUrl, gr.Params)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		fmt.Printf("Error occured: %e\n", err)
+		return nil, 0, err
+	}
+	addHdrs(req, gr.Headers)
+	body, status, err := ClientDo(req)
+	if err != nil {
+		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
+	}
+	return body, status, nil
 }
 
 func Get(host string, end string, params []Pair, hdrs []Pair) ([]byte, int, error) {
