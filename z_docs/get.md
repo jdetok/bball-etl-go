@@ -1,29 +1,43 @@
 # general get request architecture 07/24/2025
+## GetReq type
+
+```go
+type GetReq struct {
+	Host     string
+	Endpoint string
+	Params   []Pair
+	Headers  []Pair
+}
+
+var commonPlayerInfo = GetReq{
+	Host:     HOST,
+	Endpoint: "/stats/commonplayerinfo",
+	Headers:  HDRS,
+	Params:   []Pair{{"LeagueID", "10"}, {"PlayerID", "2544"}},
+}
+```
+
 ## entrypoint: Get function
 the Get function accepts a host, end[point], params, & headers 
 (both slices of key-val pairs) and returns a response body, HTTP status code, &
 error  
 example that prints the response body: 
 ```go
-body, _, err := Get("stats.nba.com", "/stats/commonplayerinfo", params, hdrs)
+body, _, err := commonPlayerInfo.GetRespBody()
 	if err != nil {
 		log.Fatal(err)
 	}
 fmt.Println(string(body))
 ```
-### example params & hdrs
+### global host & headers
 ```go
-var hdrs = []Pair{
+const HOST string = "stats.nba.com"
+var HDRS = []Pair{
 	{"Accept", "application/json"},
 	{"Connection", "keep-alive"},
 	{"Referer", "https://www.nba.com"},
 	{"Origin", "https://www.nba.com"},
 	{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"},
-}
-
-var params = []Pair{
-	{"LeagueID", "10"},
-	{"PlayerID", "2544"},
 }
 ```
 ## Pair type

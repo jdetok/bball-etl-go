@@ -12,8 +12,19 @@ var commonPlayerInfo = GetReq{
 	Params:   []Pair{{"LeagueID", "10"}, {"PlayerID", "2544"}},
 }
 
+var commonAllPlayers = GetReq{
+	Host:     HOST,
+	Endpoint: "/stats/commonallplayers",
+	Headers:  HDRS,
+	Params: []Pair{
+		{"LeagueID", "10"},
+		{"IsOnlyCurrentSeason", "1"},
+		{"PlayerID", "2024-25"}},
+}
+
 func main() {
-	body, _, err := commonPlayerInfo.GetRespBody()
+	// body, _, err := commonPlayerInfo.GetRespBody()
+	body, _, err := commonAllPlayers.GetRespBody()
 	if err != nil {
 		log.Fatal(err)
 	}
