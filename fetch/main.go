@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 )
@@ -26,7 +27,8 @@ var commonAllPlayers = GetReq{
 	Params: []Pair{
 		{"LeagueID", "00"},
 		{"IsOnlyCurrentSeason", "1"},
-		{"Season", "2024-25"}},
+		{"Season", "2024-25"},
+	},
 }
 
 var leagueStandings = GetReq{
@@ -36,17 +38,44 @@ var leagueStandings = GetReq{
 	Params: []Pair{
 		{"LeagueID", "00"},
 		{"Season", "2024-25"},
-		// {"SeasonType", "Playoffs"}},
-		{"SeasonType", "Regular+Season"}},
+		{"SeasonType", "Regular+Season"},
+	},
+}
+
+var leagueGameLog = GetReq{
+	Host:     HOST,
+	Headers:  HDRS,
+	Endpoint: "/stats/leaguegamelog",
+	Params: []Pair{
+		{"LeagueID", "00"},
+		{"Season", "2024-25"},
+		{"SeasonType", "Regular+Season"},
+		{"Counter", "0"},
+		{"PlayerOrTeam", "T"},
+		{"Sorter", "DATE"},
+		{"DateFrom", ""},
+		{"DateTo", ""},
+		{"Direction", "ASC"},
+	},
 }
 
 func main() {
 	// body, _, err := commonPlayerInfo.GetRespBody()
 	// body, _, err := commonAllPlayers.GetRespBody()
 	// body, _, err := playerAwards.GetRespBody()
-	body, _, err := leagueStandings.GetRespBody()
+	// body, _, err := leagueStandings.GetRespBody()
+	body, _, err := leagueGameLog.GetRespBody()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error getting response: %e", err)
 	}
-	fmt.Println(string(body))
+	var resp Resp
+	if err := json.Unmarshal(body, &resp); err != nil {
+		log.Fatalf("error unmarshaling: %e", err)
+	}
+	fmt.Println(resp.ResultSets[0].RowSet[0]...)
+	for _, r := range resp.ResultSets[0].RowSet {
+		for i, x := range r {
+			fmt.Printf("%v: %v\n", resp.ResultSets[0].Headers[i], x)
+		}
+	}
 }

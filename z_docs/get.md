@@ -11,8 +11,8 @@ type GetReq struct {
 
 var commonPlayerInfo = GetReq{
 	Host:     HOST,
+    Headers:  HDRS,
 	Endpoint: "/stats/commonplayerinfo",
-	Headers:  HDRS,
 	Params:   []Pair{{"LeagueID", "10"}, {"PlayerID", "2544"}},
 }
 ```
