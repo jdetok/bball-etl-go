@@ -54,7 +54,7 @@ pass resp returned from RequestResp
 placeholder print `header - val` to console
 */
 func ProcessResp(resp Resp) {
-	fmt.Println(resp.ResultSets[0].RowSet[0]...)
+	// fmt.Println(resp.ResultSets[0].RowSet[0]...)
 	for _, r := range resp.ResultSets[0].RowSet {
 		for i, x := range r {
 			fmt.Printf("%v: %v\n", resp.ResultSets[0].Headers[i], x)
