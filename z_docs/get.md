@@ -1,6 +1,16 @@
 # general get request architecture 07/24/2025
+# most current 7/24 9pm:
+this takes a premade GetReq var, requests the json, marshals it to Resp type
+```go
+func main() {
+	resp, err := RequestResp(leagueGameLog)
+	if err != nil {
+		log.Fatalf("error getting response: %e", err)
+	}
+	ProcessResp(resp)
+}
+```
 ## GetReq type
-
 ```go
 type GetReq struct {
 	Host     string
@@ -8,13 +18,28 @@ type GetReq struct {
 	Params   []Pair
 	Headers  []Pair
 }
-
+// EXAMPLE
 var commonPlayerInfo = GetReq{
 	Host:     HOST,
     Headers:  HDRS,
 	Endpoint: "/stats/commonplayerinfo",
 	Params:   []Pair{{"LeagueID", "10"}, {"PlayerID", "2544"}},
 }
+```
+## Resp type
+```go
+type Resp struct {
+	Resource   string      `json:"resource"`
+	Parameters any         `json:"parameters"`
+	ResultSets []ResultSet `json:"resultSets"`
+}
+
+type ResultSet struct {
+	Name    string   `json:"name"`
+	Headers []string `json:"headers"`
+	RowSet  [][]any  `json:"rowSet"`
+}
+
 ```
 
 ## entrypoint: Get function

@@ -18,20 +18,19 @@ type Pair struct {
 	Val string
 }
 
-func (gr *GetReq) GetRespBody() ([]byte, int, error) {
+func (gr *GetReq) GetRespBody() ([]byte, error) {
 	bUrl := gr.baseUrl()
 	url := gr.addParams(bUrl)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		fmt.Printf("Error occured: %e\n", err)
-		return nil, 0, err
+		return nil, err
 	}
 	gr.addHdrs(req)
-	body, status, err := ClientDo(req)
+	body, err := ClientDo(req)
 	if err != nil {
-		return nil, status, fmt.Errorf("%d: HTTP Request Error: %e", status, err)
+		return nil, err
 	}
-	return body, status, nil
+	return body, nil
 }
 
 func (gr *GetReq) addParams(bUrl string) string {
@@ -55,22 +54,25 @@ func (gr *GetReq) addHdrs(r *http.Request) {
 	}
 }
 
-func ClientDo(req *http.Request) ([]byte, int, error) {
+func ClientDo(req *http.Request) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Printf("Error occured: %e\n", err)
 		if res != nil {
 			fmt.Printf("Error Status Code: %d", res.StatusCode)
-			return nil, res.StatusCode, err
+			return nil, fmt.Errorf(
+				"*Response status %d - HTTP client error occured: %e\n",
+				res.StatusCode, err)
 		}
-		return nil, 0, err
+		return nil, fmt.Errorf(
+			"*HTTP client error occured, no response received: %e\n", err)
 	}
 	defer res.Body.Close()
-	fmt.Printf("Status Code: %d\n", res.StatusCode)
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Printf("Error occured: %e\n", err)
-		return nil, res.StatusCode, err
+		return nil, fmt.Errorf(
+			"*Response status %d error occured reading response body: %e\n",
+			res.StatusCode, err)
 	}
-	return body, res.StatusCode, nil
+	return body, nil
 }

@@ -19,7 +19,7 @@ type ResultSet struct {
 
 func RequestResp(gr GetReq) (Resp, error) {
 	var resp Resp
-	body, _, err := gr.GetRespBody()
+	body, err := gr.GetRespBody()
 	if err != nil {
 		return resp, fmt.Errorf("error getting response: %e", err)
 	}
