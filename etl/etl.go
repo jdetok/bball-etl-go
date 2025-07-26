@@ -31,8 +31,6 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 		log.Fatalf("Failed to insert values: %e\n", err)
 	}
 	ra, _ := res.RowsAffected()
-
-	// fmt.Printf("%d Rows Affected: %s\n", ra, tbl)
 	l.WriteLog(fmt.Sprintf(
 		"insert statement into %s executed, Rows Affected: %d", tbl, ra))
 }
@@ -40,13 +38,13 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 func TeamSeasonRun(l logd.Logger, db *sql.DB, league, season string) error {
 	e := errd.InitErr()
 
-	y1 := season[0:4]
+	var y1 string = season[0:4]
 	y1int, err := strconv.Atoi(y1)
 	if err != nil {
 		e.Msg = "error converting year to int"
 		return e.BuildErr(err)
 	}
-	y2 := strconv.Itoa(y1int + 1)
+	var y2 string = strconv.Itoa(y1int + 1)
 
 	var d1 = []string{fmt.Sprintf("10/20/%s", y1), fmt.Sprintf("12/31/%s", y1)}
 	var d2 = []string{fmt.Sprintf("01/01/%s", y2), fmt.Sprintf("05/01/%s", y2)}
