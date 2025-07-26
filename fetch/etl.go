@@ -1,11 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 )
 
-func BballETL(r GetReq, tbl string, primKey string) {
+func BballETL(db *sql.DB, r GetReq, tbl string, primKey string) {
 	resp, err := RequestResp(r)
 	if err != nil {
 		log.Fatalf("error getting response: %e", err)
@@ -16,14 +17,8 @@ func BballETL(r GetReq, tbl string, primKey string) {
 		Cols:    resp.ResultSets[0].Headers,
 		Vals:    resp.ResultSets[0].RowSet,
 	}
+	fmt.Printf("attempting to insert data from %s into %s...\n", r.Endpoint, tbl)
 	insStmnt := insert.Build()
-	pg := GetEnvPG()
-	pg.MakeConnStr()
-	db, err := pg.Conn()
-	if err != nil {
-		fmt.Printf("Error connecting to postgres: %e\n", err)
-	}
-
 	res, err := db.Exec(insStmnt, insert.FlattenVals()...)
 	if err != nil {
 		log.Fatalf("Failed to insert values: %e\n", err)
