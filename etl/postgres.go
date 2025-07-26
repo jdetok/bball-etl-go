@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jdetok/go-api-jdeko.me/getenv"
+	"github.com/jdetok/golib/getenv"
 	_ "github.com/lib/pq"
 )
 
