@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jdetok/golib/getenv"
+	"github.com/jdetok/golib/envd"
 	_ "github.com/lib/pq"
 )
 
@@ -19,12 +19,12 @@ type PostGres struct {
 
 func GetEnvPG() PostGres {
 	var pg PostGres
-	getenv.LoadDotEnv()
-	pg.Host, _ = getenv.GetEnvStr("PG_HOST")
-	pg.Port, _ = getenv.GetEnvInt("PG_PORT")
-	pg.User, _ = getenv.GetEnvStr("PG_USER")
-	pg.Password, _ = getenv.GetEnvStr("PG_PASS")
-	pg.Database, _ = getenv.GetEnvStr("PG_DB")
+	envd.LoadDotEnv()
+	pg.Host = envd.EnvStr("PG_HOST")
+	pg.Port = envd.EnvInt("PG_PORT")
+	pg.User = envd.EnvStr("PG_USER")
+	pg.Password = envd.EnvStr("PG_PASS")
+	pg.Database = envd.EnvStr("PG_DB")
 	return pg
 }
 
