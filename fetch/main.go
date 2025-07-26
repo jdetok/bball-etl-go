@@ -16,17 +16,17 @@ func main() {
 		fmt.Println(h)
 	}
 
-	var intakeTmGame = InsertStatement{
+	var intakePlGame = InsertStatement{
 		Tbl:  "intake.gm_player",
 		Cols: resp.ResultSets[0].Headers,
 		Vals: resp.ResultSets[0].RowSet,
 	}
 
-	insStmnt := intakeTmGame.Build()
+	fmt.Println(len(intakePlGame.Cols))
+	insStmnt := intakePlGame.Build()
 	fmt.Println(insStmnt)
 	pg := GetEnvPG()
 	pg.MakeConnStr()
-	fmt.Println(pg.ConnStr)
 	db, err := pg.Conn()
 	if err != nil {
 		fmt.Printf("Error connecting to postgres: %e\n", err)
@@ -36,7 +36,7 @@ func main() {
 	}
 	fmt.Println("Successfully connected to & pinged postgres")
 
-	r, err := db.Exec(insStmnt, intakeTmGame.FlattenVals())
+	r, err := db.Exec(insStmnt, intakePlGame.FlattenVals()...)
 	if err != nil {
 		log.Fatalf("Failed to insert values: %e\n", err)
 	}
