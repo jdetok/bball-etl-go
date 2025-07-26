@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"database/sql"
 	"fmt"
@@ -45,3 +46,4 @@ func (pg *PostGres) Conn() (*sql.DB, error) {
 	}
 	return db, err
 }
+*/
