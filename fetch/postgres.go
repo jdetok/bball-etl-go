@@ -1,78 +1,47 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+
+	"github.com/jdetok/go-api-jdeko.me/getenv"
+	_ "github.com/lib/pq"
 )
 
-type InsertStatement struct {
-	Tbl     string
-	PrimKey string // define like "key" or "key1, key2"
-	Cols    []string
-	Vals    [][]any
+type PostGres struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Database string
+	ConnStr  string
 }
 
-// flatten [][]any to []any
-func (ins *InsertStatement) FlattenVals() []any {
-	var valsFlat []any
-	for _, r := range ins.Vals {
-		valsFlat = append(valsFlat, r...)
+func GetEnvPG() PostGres {
+	var pg PostGres
+	getenv.LoadDotEnv()
+	pg.Host, _ = getenv.GetEnvStr("PG_HOST")
+	pg.Port, _ = getenv.GetEnvInt("PG_PORT")
+	pg.User, _ = getenv.GetEnvStr("PG_USER")
+	pg.Password, _ = getenv.GetEnvStr("PG_PASS")
+	pg.Database, _ = getenv.GetEnvStr("PG_DB")
+	return pg
+}
+
+func (pg *PostGres) MakeConnStr() {
+	pg.ConnStr = fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		pg.Host, pg.Port, pg.User, pg.Password, pg.Database)
+}
+
+func (pg *PostGres) Conn() (*sql.DB, error) {
+	db, err := sql.Open("postgres", pg.ConnStr)
+	if err != nil {
+		return nil, err
 	}
-	return valsFlat
-}
-
-func (ins *InsertStatement) Build() string {
-	stmnt := fmt.Sprintf("insert into %s (", ins.Tbl)
-	ins.addCols(&stmnt)
-	ins.addValsPlHldr(&stmnt)
-	return fmt.Sprintf("%s on conflict (%s) do nothing", stmnt, ins.PrimKey)
-}
-
-func (ins *InsertStatement) addCols(stmnt *string) {
-	for i, c := range ins.Cols {
-		*stmnt += c
-		if i < (len(ins.Cols) - 1) {
-			*stmnt += ", "
-		}
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf(
+			"Error pining postgres after successful conn: %e\n", err)
 	}
-	*stmnt += ")"
-}
-
-func (ins *InsertStatement) addValsPlHldr(stmnt *string) {
-	*stmnt += " values "
-	for i, r := range ins.Vals {
-		*stmnt += "("
-		for j := range r {
-			*stmnt += fmt.Sprintf("$%d", i*len(r)+(j+1))
-			// *stmnt += "$"
-			if j < (len(r) - 1) {
-				*stmnt += ", "
-			}
-		}
-		*stmnt += ")"
-		if i < (len(ins.Vals) - 1) {
-			*stmnt += ", "
-		}
-	}
-	// *stmnt += ");"
-}
-
-func (ins *InsertStatement) addVals(stmnt *string) {
-	*stmnt += " values ("
-	for i, r := range ins.Vals {
-		*stmnt += "("
-		for j, v := range r {
-			if v == nil {
-				v = 0
-			}
-			*stmnt += fmt.Sprintf("%v", v)
-			if j < (len(r) - 1) {
-				*stmnt += ", "
-			}
-		}
-		*stmnt += ")"
-		if i < (len(ins.Vals) - 1) {
-			*stmnt += ", "
-		}
-	}
-	*stmnt += ");"
+	return db, err
 }

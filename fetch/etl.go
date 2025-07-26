@@ -26,3 +26,12 @@ func BballETL(db *sql.DB, r GetReq, tbl string, primKey string) {
 	ra, _ := res.RowsAffected()
 	fmt.Printf("%d Rows Affected: %s\n", ra, tbl)
 }
+
+/* EXAMPLES
+BballETL(nightlyPlGameLog, "intake.gm_player", "game_id, player_id")
+BballETL(nightlyTmGameLog, "intake.gm_team", "game_id, team_id")
+BballETL(MakeGameLogReq("00", "2024-25", "T", "10/20/2024", "12/31/2024"),
+		"intake.gm_team", "game_id, team_id")
+BballETL(db, MakeGameLogReq("10", "2022-23", "T", "", ""),
+		"intake.gm_team", "game_id, team_id")
+*/
