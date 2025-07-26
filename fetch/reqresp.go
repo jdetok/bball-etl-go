@@ -35,6 +35,27 @@ type Pair struct {
 	Val string
 }
 
+func MakeGameLogReq(league string, season string, plTm string,
+	dateFrom string, dateTo string) GetReq {
+	var gr = GetReq{
+		Host:     HOST,
+		Headers:  HDRS,
+		Endpoint: "/stats/leaguegamelog",
+		Params: []Pair{
+			{"LeagueID", league},
+			{"Season", season},
+			{"SeasonType", "Regular+Season"},
+			{"Counter", "0"},
+			{"Sorter", "DATE"},
+			{"Direction", "DESC"},
+			{"PlayerOrTeam", plTm},
+			{"DateFrom", dateFrom},
+			{"DateTo", dateTo},
+		},
+	}
+	return gr
+}
+
 // pass a defined GetReq struct, unmarshals body & returns as Resp struct
 func RequestResp(gr GetReq) (Resp, error) {
 	var resp Resp
