@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+
 	resp, err := RequestResp(nightlyPlGameLog)
 	if err != nil {
 		log.Fatalf("error getting response: %e", err)
@@ -23,7 +24,24 @@ func main() {
 
 	insStmnt := intakeTmGame.Build()
 	fmt.Println(insStmnt)
-	// db.Exec(insStmnt, intakeTmGame.FlattenVals())
+	pg := GetEnvPG()
+	pg.MakeConnStr()
+	fmt.Println(pg.ConnStr)
+	db, err := pg.Conn()
+	if err != nil {
+		fmt.Printf("Error connecting to postgres: %e\n", err)
+	}
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Error pining postgres after successful pg.Conn(): %e\n", err)
+	}
+	fmt.Println("Successfully connected to & pinged postgres")
+
+	r, err := db.Exec(insStmnt, intakeTmGame.FlattenVals())
+	if err != nil {
+		log.Fatalf("Failed to insert values: %e\n", err)
+	}
+	ra, _ := r.RowsAffected()
+	fmt.Printf("Rows Affected: %d\n", ra)
 
 	// fmt.Println(intakePlGame.Build())
 	// for _, h := range resp.ResultSets[0].Headers {
