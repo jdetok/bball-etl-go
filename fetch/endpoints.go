@@ -1,5 +1,9 @@
 package main
 
+import "time"
+
+var YESTERDAY string = time.Now().Add(-24 * time.Hour).Format("01/02/2006")
+
 var nightlyTmGameLog = GetReq{
 	Host:     HOST,
 	Headers:  HDRS,
@@ -11,9 +15,9 @@ var nightlyTmGameLog = GetReq{
 		{"Counter", "0"},
 		{"Sorter", "DATE"},
 		{"Direction", "DESC"},
-		{"DateFrom", "07/20/2025"},
-		{"DateTo", "07/24/2025"},
 		{"PlayerOrTeam", "T"},
+		{"DateFrom", YESTERDAY},
+		{"DateTo", YESTERDAY},
 	},
 }
 
@@ -28,9 +32,9 @@ var nightlyPlGameLog = GetReq{
 		{"Counter", "0"},
 		{"Sorter", "DATE"},
 		{"Direction", "DESC"},
-		{"DateFrom", "07/20/2025"},
-		{"DateTo", "07/24/2025"},
 		{"PlayerOrTeam", "P"},
+		{"DateFrom", YESTERDAY},
+		{"DateTo", YESTERDAY},
 	},
 }
 
