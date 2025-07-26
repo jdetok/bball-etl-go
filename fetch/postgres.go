@@ -5,9 +5,10 @@ import (
 )
 
 type InsertStatement struct {
-	Tbl  string
-	Cols []string
-	Vals [][]any
+	Tbl     string
+	PrimKey string // define like "key" or "key1, key2"
+	Cols    []string
+	Vals    [][]any
 }
 
 // flatten [][]any to []any
@@ -23,8 +24,7 @@ func (ins *InsertStatement) Build() string {
 	stmnt := fmt.Sprintf("insert into %s (", ins.Tbl)
 	ins.addCols(&stmnt)
 	ins.addValsPlHldr(&stmnt)
-	// ins.addVals(&stmnt)
-	return stmnt + ""
+	return fmt.Sprintf("%s on conflict (%s) do nothing", stmnt, ins.PrimKey)
 }
 
 func (ins *InsertStatement) addCols(stmnt *string) {
