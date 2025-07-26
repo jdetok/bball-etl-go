@@ -42,6 +42,7 @@ func (ins *InsertStatement) addValsPlHldr(stmnt *string) {
 	for i, r := range ins.Vals {
 		*stmnt += "("
 		for j := range r {
+			// postgres uses 1-type placeholders, i*rows + idx of current val
 			*stmnt += fmt.Sprintf("$%d", i*len(r)+(j+1))
 			if j < (len(r) - 1) {
 				*stmnt += ", "
