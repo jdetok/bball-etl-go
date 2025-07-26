@@ -22,10 +22,13 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 		Vals:    resp.ResultSets[0].RowSet,
 	}
 
-	l.WriteLog(fmt.Sprintf(
-		"attempting to insert data from %s into %s...", r.Endpoint, tbl))
+	
 
 	insStmnt := insert.Build()
+	l.WriteLog(fmt.Sprintf(
+		"attempting to insert %d rowsets from %s into %s...",
+		len(insert.Vals), r.Endpoint, tbl))
+
 	res, err := db.Exec(insStmnt, insert.FlattenVals()...)
 	if err != nil {
 		log.Fatalf("Failed to insert values: %e\n", err)
@@ -37,6 +40,9 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 
 func TeamSeasonRun(l logd.Logger, db *sql.DB, league, season string) error {
 	e := errd.InitErr()
+
+	l.WriteLog(fmt.Sprintf(
+		"attempting to run BballETL for %s--LeagueID=%s", season, league))
 
 	var y1 string = season[0:4]
 	y1int, err := strconv.Atoi(y1)
@@ -51,6 +57,8 @@ func TeamSeasonRun(l logd.Logger, db *sql.DB, league, season string) error {
 	var dates = [][]string{d1, d2}
 
 	for _, d := range dates {
+		l.WriteLog(fmt.Sprintf(
+			"running BballETL: dateFrom=%s | dateTo=%s", d[0], d[1]))
 		BballETL(l, db, MakeGameLogReq(
 			league, season, "T", d[0], d[1]),
 			"intake.gm_team", "game_id, team_id")

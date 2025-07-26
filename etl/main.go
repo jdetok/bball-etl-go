@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	if err := TeamSeasonRun(l, db, "00", "2010-11"); err != nil {
+	if err := TeamSeasonRun(l, db, "00", "2016-17"); err != nil {
 		e.Msg = "error running team season:"
 		log.Fatal(e.BuildErr(err))
 	}
