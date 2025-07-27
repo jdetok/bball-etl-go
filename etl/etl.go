@@ -10,6 +10,21 @@ import (
 	"github.com/jdetok/golib/logd"
 )
 
+func TestETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
+	resp, err := RequestResp(r)
+	if err != nil {
+		log.Fatalf("error getting response: %e", err)
+	}
+	var insert = InsertStatement{
+		Tbl:     tbl,
+		PrimKey: primKey,
+		Cols:    resp.ResultSets[0].Headers,
+		ValSets: resp.ResultSets[0].RowSet,
+	}
+
+	insert.ChunkVals()
+}
+
 func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 	resp, err := RequestResp(r)
 	if err != nil {
@@ -19,7 +34,7 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 		Tbl:     tbl,
 		PrimKey: primKey,
 		Cols:    resp.ResultSets[0].Headers,
-		Vals:    resp.ResultSets[0].RowSet,
+		ValSets: resp.ResultSets[0].RowSet,
 	}
 
 	insStmnt := insert.Build()
