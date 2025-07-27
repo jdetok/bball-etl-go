@@ -27,6 +27,9 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 		"attempting to insert %d rowsets from %s into %s...",
 		len(insert.Vals), r.Endpoint, tbl))
 
+	vals := insert.FlattenVals()
+	fmt.Println(len(vals))
+
 	res, err := db.Exec(insStmnt, insert.FlattenVals()...)
 	if err != nil {
 		log.Fatalf("Failed to insert values: %e\n", err)
