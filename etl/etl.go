@@ -22,8 +22,6 @@ func BballETL(l logd.Logger, db *sql.DB, r GetReq, tbl string, primKey string) {
 		Vals:    resp.ResultSets[0].RowSet,
 	}
 
-	
-
 	insStmnt := insert.Build()
 	l.WriteLog(fmt.Sprintf(
 		"attempting to insert %d rowsets from %s into %s...",
