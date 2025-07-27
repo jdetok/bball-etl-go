@@ -34,6 +34,47 @@ func GetParams() LgTbls {
 	return lt
 }
 
+// run single season
+func GetManyGLogs(l logd.Logger, db *sql.DB, lgs []string, tbls []Table, szn string) error {
+	e := errd.InitErr()
+	for i := range lgs { // outer loop, 2 calls per lg
+		for _, t := range tbls {
+			// create request
+			r := GameLogReq(lgs[i], szn, t.PlTm, "", "")
+			l.WriteLog(fmt.Sprintf(
+				"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s",
+				r.Endpoint, lgs[i], szn, t.PlTm))
+
+			// attempt to fetch & insert for current iteration
+			err := GameLogETL(l, db, r, t.Name, t.PrimKey)
+			if err != nil {
+				e.Msg = fmt.Sprintf(
+					"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s",
+					lgs[i], szn, t.PlTm)
+				l.WriteLog(e.Msg)
+				return e.BuildErr(err)
+			}
+			// success, next call
+			l.WriteLog(fmt.Sprintf(
+				"finished with LG=%s, SZN=%s, PLTM=%s",
+				lgs[i], szn, t.PlTm))
+		}
+	}
+	return nil
+}
+
+func GLogSeasonETL(l logd.Logger, db *sql.DB, szn string) error {
+	e := errd.InitErr()
+	lt := GetParams()
+	err := GetManyGLogs(l, db, lt.lgs, lt.tbls, szn)
+	if err != nil {
+		e.Msg = fmt.Sprintf("error running ETL for %s", szn)
+		l.WriteLog(e.Msg)
+		return e.BuildErr(err)
+	}
+	return nil
+}
+
 /*
 nightly game log fetch both PlayerTeam=P & T and NBA and WNBA
 using yeseterday's date as DateFrom/DateTo
@@ -44,21 +85,7 @@ func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 	lt := GetParams()
 	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
-/*
-	var lgs = []string{"00", "10"}
-	var tbls = []Table{
-		{
-			Name:    "intake.gm_team",
-			PrimKey: "game_id, team_id",
-			PlTm:    "T",
-		},
-		{
-			Name:    "intake.gm_player",
-			PrimKey: "game_id, player_id",
-			PlTm:    "P",
-		},
-	}
-*/
+
 	// makes 4 calls to leaguegamelog endpoint
 	for i := range lt.lgs { // outer loop, 2 calls per lg
 		for _, t := range lt.tbls {

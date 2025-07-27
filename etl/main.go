@@ -54,7 +54,8 @@ func main() {
 	}
 
 	// fetch & insert current (as of yesterday) stats for NBA and WNBA
-	err = GLogDailyETL(l, db)
+	// err = GLogDailyETL(l, db)
+	err = GLogSeasonETL(l, db, "2014-15")
 	if err != nil {
 		e.Msg = "error inserting data"
 		l.WriteLog(e.Msg)
