@@ -9,16 +9,43 @@ import (
 	"github.com/jdetok/golib/logd"
 )
 
+// TODO: struct or something to standardize the lgs szn tables for a season etl
+
+type LgTbls struct {
+	lgs  []string
+	tbls []Table
+}
+
+func GetParams() LgTbls {
+	var lt LgTbls
+	lt.lgs = []string{"00", "10"}
+	lt.tbls = []Table{
+		{
+			Name:    "intake.gm_team",
+			PrimKey: "game_id, team_id",
+			PlTm:    "T",
+		},
+		{
+			Name:    "intake.gm_player",
+			PrimKey: "game_id, player_id",
+			PlTm:    "P",
+		},
+	}
+	return lt
+}
+
 /*
 nightly game log fetch both PlayerTeam=P & T and NBA and WNBA
 using yeseterday's date as DateFrom/DateTo
 */
 func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 	e := errd.InitErr()
-	sl := GetSeasons()
 	yesterday := Yesterday(time.Now())
-	var lgs = []string{"00", "10"}
+	lt := GetParams()
+	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
+/*
+	var lgs = []string{"00", "10"}
 	var tbls = []Table{
 		{
 			Name:    "intake.gm_team",
@@ -31,29 +58,29 @@ func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 			PlTm:    "P",
 		},
 	}
-
+*/
 	// makes 4 calls to leaguegamelog endpoint
-	for i := range lgs { // outer loop, 2 calls per lg
-		for _, t := range tbls {
+	for i := range lt.lgs { // outer loop, 2 calls per lg
+		for _, t := range lt.tbls {
 			// create request
-			r := GameLogReq(lgs[i], szns[i], t.PlTm, yesterday, yesterday)
+			r := GameLogReq(lt.lgs[i], szns[i], t.PlTm, yesterday, yesterday)
 			l.WriteLog(fmt.Sprintf(
 				"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s, DATE=%s",
-				r.Endpoint, lgs[i], szns[i], t.PlTm, yesterday))
+				r.Endpoint, lt.lgs[i], szns[i], t.PlTm, yesterday))
 
 			// attempt to fetch & insert for current iteration
 			err := GameLogETL(l, db, r, t.Name, t.PrimKey)
 			if err != nil {
 				e.Msg = fmt.Sprintf(
 					"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s, DATE=%s",
-					lgs[i], szns[i], t.PlTm, yesterday)
+					lt.lgs[i], szns[i], t.PlTm, yesterday)
 				l.WriteLog(e.Msg)
 				return e.BuildErr(err)
 			}
 			// success, next call
 			l.WriteLog(fmt.Sprintf(
 				"finished with LG=%s, SZN=%s, PLTM=%s, DATE=%s",
-				lgs[i], szns[i], t.PlTm, yesterday))
+				lt.lgs[i], szns[i], t.PlTm, yesterday))
 		}
 	}
 	return nil
