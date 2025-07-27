@@ -40,6 +40,9 @@ func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 
 	for i := range lgs {
 		for _, t := range tbls {
+			l.WriteLog(fmt.Sprintf(
+				"attempting to fetch LG=%s, SZN=%s, PLTM=%s, DATE=%s",
+				lgs[i], szns[i], t.PlTm, yesterday))
 			err := GameLogETL(l, db, GameLogReq(
 				lgs[i], szns[i], t.PlTm, yesterday, yesterday,
 			), t.Name, t.PrimKey)
@@ -47,8 +50,13 @@ func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 				e.Msg = fmt.Sprintf(
 					"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s, DATE=%s",
 					lgs[i], szns[i], t.PlTm, yesterday)
+				l.WriteLog(e.Msg)
 				return e.BuildErr(err)
 			}
+			l.WriteLog(
+				fmt.Sprintf(
+					"finished with LG=%s, SZN=%s, PLTM=%s, DATE=%s",
+					lgs[i], szns[i], t.PlTm, yesterday))
 		}
 	}
 	return nil
@@ -61,21 +69,24 @@ func GameLogETL(l logd.Logger, db *sql.DB, r GetReq, tbl, primKey string) error 
 	resp, err := RequestResp(r)
 	if err != nil {
 		e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
+		l.WriteLog(e.Msg)
 		return e.BuildErr(err)
 	}
 
 	var cols []string = resp.ResultSets[0].Headers
 	var rows [][]any = resp.ResultSets[0].RowSet
 
+	// return early when no rows in response
+	if len(rows) == 0 {
+		l.WriteLog("response returned 0 rows, exiting")
+		return nil
+	}
+
 	l.WriteLog(
 		fmt.Sprintf("response returned %d fields & %d rows",
 			len(cols), len(rows)))
 
-	// return early when no rows in response
-	if len(rows) == 0 {
-		return nil
-	}
-
+	// attempt to insert rows from response
 	ins := MakeInsert(
 		tbl,
 		primKey,

@@ -62,21 +62,22 @@ func main() {
 
 	if err != nil {
 		e.Msg = "error connecting to postgres:"
+		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
 
-	// err = GameLogETL(l, db, GameLogReq(LEAGUE, SEASON, PLTM, DATEFROM, DATETO),
-	// 	"intake.gm_team", "game_id, team_id")
+	// fetch & insert current (as of yesterday) stats for NBA and WNBA
 	err = GLogDailyETL(l, db)
 	if err != nil {
 		e.Msg = "error inserting data"
+		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
 
 	EmailLog(l.LogF)
-
 	if err != nil {
 		e.Msg = "error emailing log:"
+		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
 }
