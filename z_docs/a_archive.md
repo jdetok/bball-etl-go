@@ -1,3 +1,6 @@
+# old files
+## old z_endpts.go file
+```go
 package main
 
 var commonPlayerInfo = GetReq{
@@ -35,8 +38,6 @@ var leagueStandings = GetReq{
 		{"SeasonType", "Regular+Season"},
 	},
 }
-
-/*
 
 var nightlyTmGameLog = GetReq{
 	Host:     HOST,
@@ -88,5 +89,4 @@ var leagueGameLog = GetReq{
 		{"Direction", "DESC"},
 	},
 }
-
-*/
+```

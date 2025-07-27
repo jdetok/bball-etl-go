@@ -10,7 +10,23 @@ import (
 	"github.com/jdetok/golib/pgresd"
 )
 
+/* TODO -
+* don't attempt to run the insert function if request returned no data
+
+* convert the make request func to accept slice of str for league, season, pltm
+** to enable calling both leagues, player and team fetch, multiple seasons, etc
+
+* figure out how to request the appropriate season
+ */
+
 var YESTERDAY string = time.Now().Add(-24 * time.Hour).Format("01/02/2006")
+var LEAGUE string = "00"
+var NBA string = "00"
+var WNBA string = "10"
+var SEASON string = "2011-12"
+var PLTM string = "T"
+var DATEFROM string = ""
+var DATETO string = ""
 
 func main() {
 	e := errd.InitErr()
@@ -31,8 +47,7 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	// TODO - don't continue to insert if there's no data
-	err = BballETL(l, db, MakeGameLogReq("00", "2020-21", "T", "", ""),
+	err = BballETL(l, db, MakeGameLogReq(LEAGUE, SEASON, PLTM, DATEFROM, DATETO),
 		"intake.gm_team", "game_id, team_id")
 	if err != nil {
 		e.Msg = "error inserting data"
