@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jdetok/golib/errd"
@@ -37,6 +38,34 @@ type SeasonLeague struct {
 	WSzn string
 }
 
+func GetSeasons() SeasonLeague {
+	var sl SeasonLeague
+	var crnt []string = CurrentSzns(time.Now())
+
+	m, err := strconv.Atoi(time.Now().Format("1"))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// beginning of year through april
+	sl.Szn = crnt[0]
+	sl.WSzn = crnt[0]
+
+	// may through september
+	if m > 5 && m < 10 {
+		sl.WSzn = crnt[1]
+	}
+
+	// october through end of year
+	if m > 10 {
+		sl.Szn = crnt[1]
+		sl.WSzn = crnt[1]
+	}
+
+	fmt.Printf("NBA Season: %s | WNBA Season: %s\n", sl.Szn, sl.WSzn)
+	return sl
+}
+
 /*
 returns slice of season strings for date (generally pass time.Now())
 calling in 2025 will return 2024-25 and 2025-26 and so on
@@ -59,22 +88,6 @@ func Yesterday(dt time.Time) string {
 	return dt.Add(-24 * time.Hour).Format("01/02/2006")
 }
 
-/*
-	func MakeSznLg(startDate, endDate string) SznLg {
-		lgs := []string{"00", "10"}
-		szns := []string{
-			fmt.Sprintf("%s-%s",
-				time.Now().Format("2006"),
-			),
-		}
-		var sl = SznLg{
-			League:    lg,
-			Season:    szn,
-			StartDate: startDate,
-			EndDate:   endDate,
-		}
-	}
-*/
 func SchedReq(league, season string) GetReq {
 	var gr = GetReq{
 		Host:     HOST,
