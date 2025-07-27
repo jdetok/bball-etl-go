@@ -35,6 +35,12 @@ type Pair struct {
 	Val string
 }
 
+type Table struct {
+	Name    string
+	PrimKey string
+	PlTm    string
+}
+
 func GameLogReq(league string, season string, plTm string,
 	dateFrom string, dateTo string) GetReq {
 	var gr = GetReq{
@@ -58,7 +64,6 @@ func GameLogReq(league string, season string, plTm string,
 
 // pass a defined GetReq struct, unmarshals body & returns as Resp struct
 func RequestResp(gr GetReq) (Resp, error) {
-	fmt.Printf("requesting data from %s...\n", gr.Endpoint)
 	var resp Resp
 	body, err := gr.BodyFromReq()
 	if err != nil {

@@ -33,18 +33,6 @@ var DATEFROM string = ""
 var DATETO string = ""
 
 func main() {
-	// e := errd.InitErr()
-	// fmt.Println(CurrentSzns(time.Now()))
-
-	// sl := GetSeasons()
-	// fmt.Println(sl.Szn)
-	// fmt.Println(sl.WSzn)
-
-	// if err := RequestSchedule(SchedReq(WNBA, SEASON)); err != nil {
-	// 	e.Msg = "req error"
-	// 	log.Fatal(e.BuildErr(err))
-	// }
-
 	e := errd.InitErr()
 
 	// initialize logger
@@ -59,9 +47,8 @@ func main() {
 	pg := pgresd.GetEnvPG()
 	pg.MakeConnStr()
 	db, err := pg.Conn()
-
 	if err != nil {
-		e.Msg = "error connecting to postgres:"
+		e.Msg = "error connecting to postgres"
 		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
@@ -76,26 +63,8 @@ func main() {
 
 	EmailLog(l.LogF)
 	if err != nil {
-		e.Msg = "error emailing log:"
+		e.Msg = "error emailing log"
 		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
 }
-
-// func EmailLog(file string) error {
-// 	m := maild.MakeMail(
-// 		[]string{"jdekock17@gmail.com"},
-// 		"Go bball ETL log attached",
-// 		"the Go bball ETL process ran. The log is attached.",
-// 	)
-// 	return m.SendMIMEEmail(file)
-// }
-
-/*
-	// wnba team then player
-	BballETL(l, db, MakeGameLogReq("10", "2025-26", "T", YESTERDAY, YESTERDAY),
-		"intake.gm_team", "game_id, team_id")
-	BballETL(l, db, MakeGameLogReq("10", "2025-26", "P", YESTERDAY, YESTERDAY),
-		"intake.gm_player", "game_id, player_id")
-
-*/
