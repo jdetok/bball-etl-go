@@ -1,27 +1,43 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+
+	"github.com/jdetok/golib/errd"
+	"github.com/jdetok/golib/logd"
 )
 
-type InsertStatement struct {
+type InsertStmnt struct {
 	Tbl     string
 	PrimKey string // define like "key" or "key1, key2"
 	Cols    []string
 	Vals    []any
-	ValSets [][]any
+	Rows    [][]any
+	Chunks  [][][]any
 }
 
-// flatten [][]any to []any
-func (ins *InsertStatement) FlattenVals() []any {
-	var valsFlat []any
-	for _, r := range ins.ValSets {
-		valsFlat = append(valsFlat, r...)
+func MakeInsert(tbl, primKey string, cols []string, rows [][]any) InsertStmnt {
+	var ins = InsertStmnt{
+		Tbl:     tbl,
+		PrimKey: primKey,
+		Cols:    cols,
+		Rows:    rows,
 	}
-	return valsFlat
+	ins.FlattenVals()
+	ins.ChunkVals()
+	return ins
 }
 
-func Flatten(set [][]any) []any {
+// flatten [][]any to []any with all values
+func (ins *InsertStmnt) FlattenVals() {
+	for _, r := range ins.Rows {
+		ins.Vals = append(ins.Vals, r...)
+	}
+}
+
+// flatten & return the values of a chunk of rows
+func ValsFromSet(set [][]any) []any {
 	var valsFlat []any
 	for _, r := range set {
 		valsFlat = append(valsFlat, r...)
@@ -29,83 +45,71 @@ func Flatten(set [][]any) []any {
 	return valsFlat
 }
 
-func (ins *InsertStatement) ChunkVals() {
-	const PG_MAX int = 65000
-	var totSets int = len(ins.ValSets)
-	var totVals int = len(ins.FlattenVals())
-	var valsPer int = len(ins.ValSets[0])
-	var setsFit int = PG_MAX / valsPer
+/*
+populates ins.Chunks [][][]any with chunks
+postgres sql.Exec() only allows 65,535 individual values to be inserted at once
+ChunkVals populates ins.Chunks ([][][]any) with as many chunks ([][]any) with
+as many full []any as necessary to keep the total number of values under 65,535.
+* have found that setting the max vals in a chunk at 20,000 makes the individual
+**execs much quicker
+*/
+func (ins *InsertStmnt) ChunkVals() {
+	const PG_MAX int = 20000 // MUST BE < 65,535
+	var totRows int = len(ins.Rows)
+	var valsPer int = len(ins.Rows[0])
+	var maxRows int = PG_MAX / valsPer
+	var totVals int = len(ins.Vals)
+
+	// number of chunks needed
+	//subtracting by 1 enables ceiling integer division
 	var numChunks int = (totVals + PG_MAX - 1) / PG_MAX
 
-	chunkIdx := make([][2]int, 0, numChunks)
+	// make slice of slice with 2 ends for start/end position in rows
+	chunkPos := make([][2]int, 0, numChunks)
 	for i := range numChunks {
-		start := i * setsFit
-		end := start + setsFit
-		if end > totSets {
-			fmt.Printf("end (%d) > total sets (%d)\n", end, totSets)
-			end = totSets
-		}
-		chunkIdx = append(chunkIdx, [2]int{start, end})
+		start := i * maxRows
+		end := min((start + maxRows), totRows) // last row if < (start + tot)
+		chunkPos = append(chunkPos, [2]int{start, end})
 	}
 
-	var chunks [][][]any
-	for i, c := range chunkIdx {
-		var valChunk [][]any = ins.ValSets[c[0]:c[1]]
-		fmt.Printf("chunk %d - sets: %d | vals: %d\n", i, len(valChunk),
-			len(Flatten(valChunk)))
-		chunks = append(chunks, valChunk)
+	// append [][]any w/ start & end pos data from ins.Rows
+	for _, c := range chunkPos {
+		var valChunk [][]any = ins.Rows[c[0]:c[1]]
+		ins.Chunks = append(ins.Chunks, valChunk)
 	}
-	fmt.Println(len(chunks))
 }
 
-/*
-postgres will only insert 65535 vals at a time. count number of vals & split up
-into chunks that can be inserted
-*/
-func (ins *InsertStatement) ChunkValsTest() {
-	const PG_MAX_VALS int = 65000
-	var totValSets int = len(ins.ValSets)
-	var totVals int = len(ins.FlattenVals())
-	var valsPer int = len(ins.ValSets[0])
-	var numSetsFit int = PG_MAX_VALS / valsPer
-	var numValsFit int = numSetsFit * valsPer
-	var numSetsRem int = totValSets - numSetsFit
-	var numValsRem int = numSetsRem * valsPer
-	var numChunks int = (totVals + PG_MAX_VALS - 1) / PG_MAX_VALS
-	fmt.Println("numchunks:", numChunks)
+// loop through the chunks & attempt to insert all rows from each one
+func (ins *InsertStmnt) Insert(l logd.Logger, db *sql.DB) error {
+	e := errd.InitErr()
+	for i, c := range ins.Chunks {
+		l.WriteLog(
+			fmt.Sprintf("attempting to insert chunk %d/%d: rowsets: %d | vals: %d",
+				i+1, len(ins.Chunks), len(c), len(ValsFromSet(c))))
 
-	fmt.Println("num of valsets:", totValSets)
-	fmt.Println("total vals:", totVals)
-	fmt.Println("vals in one valset:", valsPer)
-	fmt.Printf("num rowsets with vals < max (%d): %d:\n", PG_MAX_VALS, numSetsFit)
-	fmt.Println("num vals in rowsets that fit under max:", numValsFit)
-	fmt.Println("num rowsets remaining:", numSetsRem)
-	fmt.Println("num vals in remaining rowsets:", numValsRem)
-
-	var chunks [][]int
-	for i := range numChunks {
-		var start int = i * numSetsFit
-		var end int
-		if i == 0 {
-			end = start + numSetsFit
-		} else {
-			end = totValSets
+		res, err := db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
+		if err != nil {
+			e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
+			return e.BuildErr(err)
 		}
-		var chunk = []int{start, end}
-		chunks = append(chunks, chunk)
+		ra, _ := res.RowsAffected()
+		l.WriteLog(
+			fmt.Sprintf("chunk %d/%d inserted: %d rows affected",
+				i+1, len(ins.Chunks), ra))
 	}
-	fmt.Println(chunks)
-
+	return nil
 }
 
-func (ins *InsertStatement) Build() string {
+// construct the SQL statement to execute
+func (ins *InsertStmnt) BuildStmnt(chunk [][]any) string {
 	stmnt := fmt.Sprintf("insert into %s (", ins.Tbl)
 	ins.addCols(&stmnt)
-	ins.addValsPlHldr(&stmnt)
+	ins.addChunkParams(&stmnt, chunk)
 	return fmt.Sprintf("%s on conflict (%s) do nothing", stmnt, ins.PrimKey)
 }
 
-func (ins *InsertStatement) addCols(stmnt *string) {
+// use ins.Cols to add list of columns to sql statement
+func (ins *InsertStmnt) addCols(stmnt *string) {
 	for i, c := range ins.Cols {
 		*stmnt += c
 		if i < (len(ins.Cols) - 1) {
@@ -115,9 +119,14 @@ func (ins *InsertStatement) addCols(stmnt *string) {
 	*stmnt += ")"
 }
 
-func (ins *InsertStatement) addValsPlHldr(stmnt *string) {
+/*
+creates list of placeholder params like ($1, $2, $3...)
+postgres sql.Exec() function only accepts 65,535 total values per call
+the chunk funcs break the vals into as many chunks of less than 65,535 as needed
+*/
+func (ins *InsertStmnt) addChunkParams(stmnt *string, chunk [][]any) {
 	*stmnt += " values "
-	for i, r := range ins.ValSets {
+	for i, r := range chunk {
 		*stmnt += "("
 		for j := range r {
 			// postgres uses 1-type placeholders, i*rows + idx of current val
@@ -127,7 +136,7 @@ func (ins *InsertStatement) addValsPlHldr(stmnt *string) {
 			}
 		}
 		*stmnt += ")"
-		if i < (len(ins.Vals) - 1) {
+		if i < (len(chunk) - 1) {
 			*stmnt += ", "
 		}
 	}

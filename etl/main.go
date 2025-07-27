@@ -31,22 +31,20 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	TestETL(l, db, MakeGameLogReq("00", "2017-18", "P", "", ""),
+	// TODO - don't continue to insert if there's no data
+	err = BballETL(l, db, MakeGameLogReq("00", "2020-21", "T", "", ""),
 		"intake.gm_team", "game_id, team_id")
+	if err != nil {
+		e.Msg = "error inserting data"
+		log.Fatal(e.BuildErr(err))
+	}
 
-	/*
-		if err := TeamSeasonRun(l, db, "00", "2004-05"); err != nil {
-			e.Msg = "error running team season:"
-			log.Fatal(e.BuildErr(err))
-		}
-
-		// send email with log attached
-		EmailLog(l.LogF)
-		if err != nil {
-			e.Msg = "error emailing log:"
-			log.Fatal(e.BuildErr(err))
-		}
-	*/
+	// send email with log attached
+	EmailLog(l.LogF)
+	if err != nil {
+		e.Msg = "error emailing log:"
+		log.Fatal(e.BuildErr(err))
+	}
 }
 
 func EmailLog(file string) error {
