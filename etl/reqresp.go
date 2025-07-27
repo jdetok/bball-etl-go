@@ -35,7 +35,7 @@ type Pair struct {
 	Val string
 }
 
-func MakeGameLogReq(league string, season string, plTm string,
+func GameLogReq(league string, season string, plTm string,
 	dateFrom string, dateTo string) GetReq {
 	var gr = GetReq{
 		Host:     HOST,
