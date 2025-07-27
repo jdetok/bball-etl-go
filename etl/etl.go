@@ -117,7 +117,7 @@ func GameLogETL(l logd.Logger, db *sql.DB, r GetReq, tbl, primKey string) error 
 	e := errd.InitErr()
 
 	// call endpoint in HTTP request, return Resp struct
-	resp, err := RequestResp(r)
+	resp, err := RequestResp(l, r)
 	if err != nil {
 		e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
 		l.WriteLog(e.Msg)

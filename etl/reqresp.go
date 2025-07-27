@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/jdetok/golib/errd"
+	"github.com/jdetok/golib/logd"
 )
 
 // json response body from stats.nba.com unmarshal into Resp
@@ -63,11 +66,14 @@ func GameLogReq(league string, season string, plTm string,
 }
 
 // pass a defined GetReq struct, unmarshals body & returns as Resp struct
-func RequestResp(gr GetReq) (Resp, error) {
+func RequestResp(l logd.Logger, gr GetReq) (Resp, error) {
+	e := errd.InitErr()
 	var resp Resp
-	body, err := gr.BodyFromReq()
+	body, err := gr.BodyFromReq(l)
 	if err != nil {
-		return resp, fmt.Errorf("error getting response: %e", err)
+		e.Msg = fmt.Sprintf("error getting response for %s", gr.Endpoint)
+		l.WriteLog(e.Msg)
+		return resp, e.BuildErr(err)
 	}
 	resp, err = UnmarshalInto(body)
 	if err != nil {
@@ -113,13 +119,17 @@ make new request with url returned from MakeFullURL
 add gr.Headers to req with addHdrs
 use RespFromClient to do the http req, return the resp body []byte
 */
-func (gr *GetReq) BodyFromReq() ([]byte, error) {
+func (gr *GetReq) BodyFromReq(l logd.Logger) ([]byte, error) {
+	e := errd.InitErr()
 	req, err := http.NewRequest(http.MethodGet, gr.MakeFulLURL(), nil)
 	if err != nil {
-		return nil, err
+		e.Msg = fmt.Sprintf("error calling %s", gr.MakeFulLURL())
+		l.WriteLog(e.Msg)
+		return nil, e.BuildErr(err)
+
 	}
 	gr.addHdrs(req)
-	body, err := RespFromClient(req)
+	body, err := RespFromClient(l, req)
 	if err != nil {
 		return nil, err
 	}
@@ -154,25 +164,25 @@ func (gr *GetReq) addHdrs(r *http.Request) {
 use http client to perform http request
 get & return body as []byte
 */
-func RespFromClient(req *http.Request) ([]byte, error) {
+func RespFromClient(l logd.Logger, req *http.Request) ([]byte, error) {
+	e := errd.InitErr()
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if res != nil {
-			fmt.Printf("Error Status Code: %d", res.StatusCode)
-			return nil, fmt.Errorf(
-				"*Response status %d - HTTP client error occured: %e",
-				res.StatusCode, err)
+			e.Msg = fmt.Sprint(res.StatusCode, "- HTTP client error occured")
+			l.WriteLog(e.Msg)
+			return nil, e.BuildErr(err)
 		}
-		return nil, fmt.Errorf(
-			"*HTTP client error occured, no response received: %e", err)
+		e.Msg = "*500 - HTTP client error occured, no response received"
+		return nil, e.NewErr()
 	}
+
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf("Error occured: %e\n", err)
-		return nil, fmt.Errorf(
-			"*Response status %d error occured reading response body: %e",
-			res.StatusCode, err)
+		e.Msg = fmt.Sprint(res.StatusCode, "- error reading response body")
+		l.WriteLog(e.Msg)
+		return nil, e.BuildErr(err)
 	}
 	return body, nil
 }

@@ -5,7 +5,10 @@ import (
 	"fmt"
 
 	"github.com/jdetok/golib/errd"
+	"github.com/jdetok/golib/logd"
 )
+
+// calls scheduleleaguev2 endpoint for schedule start/end dates
 
 type RespSched struct {
 	Dates GameDates `json:"leagueSchedule"`
@@ -33,10 +36,10 @@ func SchedReq(league, season string) GetReq {
 	return gr
 }
 
-func RequestSchedule(gr GetReq) error {
+func RequestSchedule(l logd.Logger, gr GetReq) error {
 	e := errd.InitErr()
 	fmt.Printf("requesting data from %s...\n", gr.Endpoint)
-	body, err := gr.BodyFromReq()
+	body, err := gr.BodyFromReq(l)
 	if err != nil {
 		e.Msg = "error getting schedule response"
 		return e.BuildErr(err)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/jdetok/golib/errd"
 	"github.com/jdetok/golib/logd"
@@ -10,33 +9,17 @@ import (
 )
 
 /* TODO -
-* don't attempt to run the insert function if request returned no data
-
-* convert the etl func to accept slice of str for league, season, pltm
-** to enable calling both leagues, player and team fetch, multiple seasons, etc
-
-* figure out how to request the appropriate season
-
-* make a func to call BballETL for yesterday with the approriate league(s) and
-** seasons
-
-* probably move the insert.go funcs to postgres package
+* move the insert.go funcs to postgres package
+* convert chunk insert to goroutine
  */
 
-var YESTERDAY string = Yesterday(time.Now())
-var LEAGUE string = "00"
-var NBA string = "00"
-var WNBA string = "10"
-var SEASON string = "2025-26"
-var PLTM string = "T"
-var DATEFROM string = ""
-var DATETO string = ""
+var SZN string = "2023-24"
 
 func main() {
 	e := errd.InitErr()
 
 	// initialize logger
-	l, err := logd.InitLogger("log", "test")
+	l, err := logd.InitLogger("log", "etl")
 
 	if err != nil {
 		e.Msg = "error initializing logger"
@@ -55,7 +38,7 @@ func main() {
 
 	// fetch & insert current (as of yesterday) stats for NBA and WNBA
 	// err = GLogDailyETL(l, db)
-	err = GLogSeasonETL(l, db, "2014-15")
+	err = GLogSeasonETL(l, db, SZN)
 	if err != nil {
 		e.Msg = "error inserting data"
 		l.WriteLog(e.Msg)

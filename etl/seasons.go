@@ -11,11 +11,15 @@ type SeasonLeague struct {
 	WSzn string
 }
 
+// pass a time (usually time.Now()), return string with yesterday's date
+func Yesterday(dt time.Time) string {
+	return dt.Add(-24 * time.Hour).Format("01/02/2006")
+}
+
 /*
 returns slice of season strings for date (generally pass time.Now())
 calling in 2025 will return 2024-25 and 2025-26 and so on
 */
-
 func CurrentSzns(dt time.Time) []string {
 	var cyyy string = dt.Format("2006")
 	var cy string = dt.AddDate(1, 0, 0).Format("06")
@@ -27,11 +31,6 @@ func CurrentSzns(dt time.Time) []string {
 		fmt.Sprint(pyyy, "-", py),
 		fmt.Sprint(cyyy, "-", cy),
 	}
-}
-
-// pass a time (usually time.Now()), return string with yesterday's date
-func Yesterday(dt time.Time) string {
-	return dt.Add(-24 * time.Hour).Format("01/02/2006")
 }
 
 func GetSeasons() SeasonLeague {
