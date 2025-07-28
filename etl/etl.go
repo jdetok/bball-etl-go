@@ -21,9 +21,12 @@ func PlayersParams() LgTbls {
 	lt.lgs = []string{"00", "10"}
 	lt.tbls = []Table{
 		{
-			Name:    "intake.gm_team",
-			PrimKey: "game_id, team_id",
-			PlTm:    "T",
+			Name:    "intake.player",
+			PrimKey: "person_id",
+		},
+		{
+			Name:    "intake.wplayer",
+			PrimKey: "person_id",
 		},
 	}
 	return lt
@@ -47,15 +50,14 @@ func GLogParams() LgTbls {
 	return lt
 }
 
-func GetPlayers(l logd.Logger, db *sql.DB, onlyCurrent string) error {
+func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 	e := errd.InitErr()
 	sl := GetSeasons()
-	var np = []string{"00", sl.Szn}
-	var wp = []string{"10", sl.WSzn}
-	var params = [][]string{np, wp}
-
-	for _, p := range params {
-		r := PlayerReq(onlyCurrent, p[0], p[1])
+	var szns = []string{sl.Szn, sl.WSzn}
+	pp := PlayersParams()
+	for i := range pp.lgs {
+		// r := PlayerReq(onlyCurrent, p[0], p[1])
+		r := PlayerReq(onlyCurrent, pp.lgs[i], szns[i])
 		resp, err := RequestResp(l, r)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
@@ -66,8 +68,25 @@ func GetPlayers(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 		// get cols/rows from resp, return early when no rows in response
 		var cols []string = resp.ResultSets[0].Headers
 		var rows [][]any = resp.ResultSets[0].RowSet
+		// ProcessResp(resp)
 		fmt.Println("Cols Length:", len(cols), "Rows Length:", len(rows))
-		ProcessResp(resp)
+
+		if len(rows) == 0 {
+			l.WriteLog("response returned 0 rows, exiting")
+			return nil
+		}
+		l.WriteLog(
+			fmt.Sprintf("response returned %d fields & %d rows",
+				len(cols), len(rows)))
+
+		// prepare the sql statement & chunks of values
+		ins := MakeInsert(
+			pp.tbls[i].Name,
+			pp.tbls[i].PrimKey,
+			cols,
+			rows,
+		) // attempt to insert rows from response
+		ins.Insert(l, db)
 	}
 
 	return nil

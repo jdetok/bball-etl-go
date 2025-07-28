@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	if err := GetPlayers(l, db, "1"); err != nil {
+	if err := CrntPlayersETL(l, db, "1"); err != nil {
 		e.Msg = "error getting players"
 		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
