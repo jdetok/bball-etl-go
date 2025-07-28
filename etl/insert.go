@@ -17,6 +17,17 @@ type InsertStmnt struct {
 	Chunks  [][][]any
 }
 
+type Table struct {
+	Name    string
+	PrimKey string
+	PlTm    string
+}
+
+type LgTbls struct {
+	lgs  []string
+	tbls []Table
+}
+
 func MakeInsert(tbl, primKey string, cols []string, rows [][]any) InsertStmnt {
 	var ins = InsertStmnt{
 		Tbl:     tbl,
