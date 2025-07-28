@@ -91,7 +91,7 @@ func (ins *InsertStmnt) Insert(l logd.Logger, db *sql.DB) error {
 		ra, _ := res.RowsAffected()
 		l.WriteLog(
 			fmt.Sprintf(
-				"chunk %d/%d: rowsets: %d | vals: %d\n---- %d rows inserted into %s",
+				"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
 				i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl))
 	}
 	return nil

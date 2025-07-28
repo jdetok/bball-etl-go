@@ -55,7 +55,20 @@ func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
 	pp := PlayersParams()
+
+	l.WriteLog(fmt.Sprintf(
+		"attempting current players ETL for %s nba season and %s wnba season",
+		sl.Szn, sl.WSzn))
 	for i := range pp.lgs {
+		var lg string
+		switch pp.lgs[i] {
+		case "00":
+			lg = "nba"
+		case "10":
+			lg = "wnba"
+		}
+
+		l.WriteLog(fmt.Sprintf("attempting to insert current %s players", lg))
 		// r := PlayerReq(onlyCurrent, p[0], p[1])
 		r := PlayerReq(onlyCurrent, pp.lgs[i], szns[i])
 		resp, err := RequestResp(l, r)
@@ -87,8 +100,10 @@ func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 			rows,
 		) // attempt to insert rows from response
 		ins.Insert(l, db)
-	}
 
+		l.WriteLog(fmt.Sprintf("current %s players ETL complete", lg))
+	}
+	l.WriteLog("current players ETL complete for all leagues")
 	return nil
 }
 
