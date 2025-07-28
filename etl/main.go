@@ -10,10 +10,10 @@ import (
 
 /* TODO -
 * move the insert.go funcs to postgres package
-* convert chunk insert to goroutine
+* make chunk inserts concurrent
  */
 
-var SZN string = "2023-24"
+var SZN string = "1999-00"
 
 func main() {
 	e := errd.InitErr()
@@ -45,7 +45,7 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	EmailLog(l.LogF)
+	EmailLog(l)
 	if err != nil {
 		e.Msg = "error emailing log"
 		l.WriteLog(e.Msg)

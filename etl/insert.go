@@ -83,10 +83,6 @@ func (ins *InsertStmnt) ChunkVals() {
 func (ins *InsertStmnt) Insert(l logd.Logger, db *sql.DB) error {
 	e := errd.InitErr()
 	for i, c := range ins.Chunks {
-		l.WriteLog(
-			fmt.Sprintf("attempting to insert chunk %d/%d: rowsets: %d | vals: %d",
-				i+1, len(ins.Chunks), len(c), len(ValsFromSet(c))))
-
 		res, err := db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
@@ -94,8 +90,9 @@ func (ins *InsertStmnt) Insert(l logd.Logger, db *sql.DB) error {
 		}
 		ra, _ := res.RowsAffected()
 		l.WriteLog(
-			fmt.Sprintf("chunk %d/%d inserted: %d rows affected",
-				i+1, len(ins.Chunks), ra))
+			fmt.Sprintf(
+				"chunk %d/%d: rowsets: %d | vals: %d\n---- %d rows affected from insert",
+				i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra))
 	}
 	return nil
 }
