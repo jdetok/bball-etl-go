@@ -36,19 +36,26 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
+	if err := GetPlayers(l, db, "1"); err != nil {
+		e.Msg = "error getting players"
+		l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
 	// fetch & insert current (as of yesterday) stats for NBA and WNBA
 	// err = GLogDailyETL(l, db)
-	err = GLogSeasonETL(l, db, SZN)
-	if err != nil {
-		e.Msg = "error inserting data"
-		l.WriteLog(e.Msg)
-		log.Fatal(e.BuildErr(err))
-	}
+	/*
+		err = GLogSeasonETL(l, db, SZN)
+		if err != nil {
+			e.Msg = "error inserting data"
+			l.WriteLog(e.Msg)
+			log.Fatal(e.BuildErr(err))
+		}
 
-	EmailLog(l)
-	if err != nil {
-		e.Msg = "error emailing log"
-		l.WriteLog(e.Msg)
-		log.Fatal(e.BuildErr(err))
-	}
+		EmailLog(l)
+		if err != nil {
+			e.Msg = "error emailing log"
+			l.WriteLog(e.Msg)
+			log.Fatal(e.BuildErr(err))
+		}
+	*/
 }

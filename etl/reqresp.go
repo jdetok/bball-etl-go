@@ -44,8 +44,7 @@ type Table struct {
 	PlTm    string
 }
 
-func GameLogReq(league string, season string, plTm string,
-	dateFrom string, dateTo string) GetReq {
+func GameLogReq(league, season, plTm, dateFrom, dateTo string) GetReq {
 	var gr = GetReq{
 		Host:     HOST,
 		Headers:  HDRS,
@@ -60,6 +59,20 @@ func GameLogReq(league string, season string, plTm string,
 			{"PlayerOrTeam", plTm},
 			{"DateFrom", dateFrom},
 			{"DateTo", dateTo},
+		},
+	}
+	return gr
+}
+
+func PlayerReq(onlyCurrent, league, season string) GetReq {
+	var gr = GetReq{
+		Host:     HOST,
+		Headers:  HDRS,
+		Endpoint: "/stats/commonallplayers",
+		Params: []Pair{
+			{"IsOnlyCurrentSeason", onlyCurrent},
+			{"LeagueID", league},
+			{"Season", season},
 		},
 	}
 	return gr

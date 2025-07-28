@@ -16,7 +16,20 @@ type LgTbls struct {
 	tbls []Table
 }
 
-func GetParams() LgTbls {
+func PlayersParams() LgTbls {
+	var lt LgTbls
+	lt.lgs = []string{"00", "10"}
+	lt.tbls = []Table{
+		{
+			Name:    "intake.gm_team",
+			PrimKey: "game_id, team_id",
+			PlTm:    "T",
+		},
+	}
+	return lt
+}
+
+func GLogParams() LgTbls {
 	var lt LgTbls
 	lt.lgs = []string{"00", "10"}
 	lt.tbls = []Table{
@@ -32,6 +45,32 @@ func GetParams() LgTbls {
 		},
 	}
 	return lt
+}
+
+func GetPlayers(l logd.Logger, db *sql.DB, onlyCurrent string) error {
+	e := errd.InitErr()
+	sl := GetSeasons()
+	var np = []string{"00", sl.Szn}
+	var wp = []string{"10", sl.WSzn}
+	var params = [][]string{np, wp}
+
+	for _, p := range params {
+		r := PlayerReq(onlyCurrent, p[0], p[1])
+		resp, err := RequestResp(l, r)
+		if err != nil {
+			e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
+			l.WriteLog(e.Msg)
+			return e.BuildErr(err)
+		}
+
+		// get cols/rows from resp, return early when no rows in response
+		var cols []string = resp.ResultSets[0].Headers
+		var rows [][]any = resp.ResultSets[0].RowSet
+		fmt.Println("Cols Length:", len(cols), "Rows Length:", len(rows))
+		ProcessResp(resp)
+	}
+
+	return nil
 }
 
 // run single season
@@ -65,7 +104,7 @@ func GetManyGLogs(l logd.Logger, db *sql.DB, lgs []string, tbls []Table, szn str
 
 func GLogSeasonETL(l logd.Logger, db *sql.DB, szn string) error {
 	e := errd.InitErr()
-	lt := GetParams()
+	lt := GLogParams()
 	err := GetManyGLogs(l, db, lt.lgs, lt.tbls, szn)
 	if err != nil {
 		e.Msg = fmt.Sprintf("error running ETL for %s", szn)
@@ -82,7 +121,7 @@ using yeseterday's date as DateFrom/DateTo
 func GLogDailyETL(l logd.Logger, db *sql.DB) error {
 	e := errd.InitErr()
 	yesterday := Yesterday(time.Now())
-	lt := GetParams()
+	lt := GLogParams()
 	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
 
