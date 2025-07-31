@@ -40,6 +40,18 @@ func SznSlice(l logd.Logger, start, end string) ([]string, error) {
 	return szns, nil
 }
 
+/*
+TODO AFTER MEDS:
+create a type to store the logger, database, AND a row counter
+update IN THE INSERT FUNC directly with pointer
+*/
+/*
+type Conf struct {
+	e  errd.Err
+	l  logd.Logger
+	rc int // row counter
+}
+*/
 func main() {
 	e := errd.InitErr()
 
