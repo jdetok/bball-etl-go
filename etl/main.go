@@ -13,7 +13,8 @@ import (
 * make chunk inserts concurrent
  */
 
-var SZN string = "1999-00"
+var SZN string = "2024-25"
+var seasons = []string{"2019-20", "2020-21", "2021-22", "2022-21", "2022-23", "2023-24"}
 
 func main() {
 	e := errd.InitErr()
@@ -43,19 +44,27 @@ func main() {
 	}
 	// fetch & insert current (as of yesterday) stats for NBA and WNBA
 	// err = GLogDailyETL(l, db)
-	/*
-		err = GLogSeasonETL(l, db, SZN)
+
+	for _, s := range seasons {
+		err = GLogSeasonETL(l, db, s)
 		if err != nil {
 			e.Msg = "error inserting data"
 			l.WriteLog(e.Msg)
 			log.Fatal(e.BuildErr(err))
 		}
+	}
+	// err = GLogSeasonETL(l, db, SZN)
+	// if err != nil {
+	// 	e.Msg = "error inserting data"
+	// 	l.WriteLog(e.Msg)
+	// 	log.Fatal(e.BuildErr(err))
+	// }
 
-		EmailLog(l)
-		if err != nil {
-			e.Msg = "error emailing log"
-			l.WriteLog(e.Msg)
-			log.Fatal(e.BuildErr(err))
-		}
-	*/
+	EmailLog(l)
+	if err != nil {
+		e.Msg = "error emailing log"
+		l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
+
 }

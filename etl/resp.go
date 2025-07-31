@@ -49,7 +49,11 @@ func RespFromClient(l logd.Logger, req *http.Request) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if res != nil {
-			e.Msg = fmt.Sprint(res.StatusCode, "- HTTP client error occured")
+			if res.StatusCode == 429 {
+				e.Msg = fmt.Sprint(res.StatusCode, "- timeout error")
+			} else {
+				e.Msg = fmt.Sprint(res.StatusCode, "- HTTP client error occured")
+			}
 			l.WriteLog(e.Msg)
 			return nil, e.BuildErr(err)
 		}
