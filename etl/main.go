@@ -18,23 +18,25 @@ type Conf struct {
 }
 
 func main() {
-	e := errd.InitErr()
+	// start time variable for logging
 	var sTime time.Time = time.Now()
+
+	// SET START AND END SEASONS
+	var st string = "2004"
+	var en string = "2007"
+
+	// Conf variable, hold logger, db, etc
 	var cnf Conf
+
+	e := errd.InitErr() // start error handler
+
 	// initialize logger
 	l, err := logd.InitLogger("log", "etl")
 	if err != nil {
 		e.Msg = "error initializing logger"
 		log.Fatal(e.BuildErr(err))
 	}
-	cnf.l = l
-	var st string = "2004"
-	var en string = "2007"
-	szns, err := SznSlice(l, st, en)
-	if err != nil {
-		e.Msg = "error making seasons string"
-		log.Fatal(e.BuildErr(err))
-	}
+	cnf.l = l // assign to cnf
 
 	// postgres connection
 	pg := pgresd.GetEnvPG()
@@ -42,20 +44,29 @@ func main() {
 	db, err := pg.Conn()
 	if err != nil {
 		e.Msg = "error connecting to postgres"
-		l.WriteLog(e.Msg)
+		cnf.l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
-	cnf.db = db
+	cnf.db = db // asign to cnf
 
-	cnf.rc = 0
+	// CREATE SLICE OF SEASONS FROM START/END YEARS
+	szns, err := SznSlice(l, st, en)
+	if err != nil {
+		e.Msg = "error making seasons string"
+		cnf.l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
+
+	cnf.rc = 0 // START ROW COUNTER AT 0 BEFORE ETL STARTS
+	// run ETL (http request, clean data, insert into db) for each season
 	for _, s := range szns {
-		sra := cnf.rc
+		sra := cnf.rc // capture row count at start of each season
 		err = GLogSeasonETL(&cnf, s)
 		if err != nil {
 			e.Msg = "error inserting data"
 			cnf.l.WriteLog(e.Msg)
 			log.Fatal(e.BuildErr(err))
-		}
+		} // log finished with season etl
 		cnf.l.WriteLog(fmt.Sprint(
 			"====  finished with ", s,
 			fmt.Sprintf(
@@ -65,14 +76,13 @@ func main() {
 				"\n== rows affected from %s fetch: %d", s, cnf.rc-sra),
 			fmt.Sprintf(
 				"\n== total rows affected: %d", cnf.rc)))
-	}
-
+	} // log finished with ETL
 	cnf.l.WriteLog(fmt.Sprintf(
 		"\n====  finished %d seasons between %s and %s | total rows affected: %d",
 		len(szns), st, en, cnf.rc,
 	))
 
-	// send log file
+	// email log file to myself
 	EmailLog(cnf.l)
 	if err != nil {
 		e.Msg = "error emailing log"
@@ -80,14 +90,14 @@ func main() {
 		log.Fatal(e.BuildErr(err))
 	}
 
-	var cTime time.Time = time.Now()
+	// log process complete
 	cnf.l.WriteLog(
 		fmt.Sprint(
 			"process complete",
 			fmt.Sprintf(
 				"\n ---- start time: %v", sTime),
 			fmt.Sprintf(
-				"\n ---- cmplt time: %v", cTime),
+				"\n ---- cmplt time: %v", time.Now()),
 			fmt.Sprintf(
 				"\n ---- duration: %v", time.Since(sTime)),
 			fmt.Sprintf(
