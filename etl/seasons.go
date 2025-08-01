@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/jdetok/golib/errd"
+	"github.com/jdetok/golib/logd"
 )
 
 type SeasonLeague struct {
@@ -14,6 +17,28 @@ type SeasonLeague struct {
 // pass a time (usually time.Now()), return string with yesterday's date
 func Yesterday(dt time.Time) string {
 	return dt.Add(-24 * time.Hour).Format("01/02/2006")
+}
+func SznSlice(l logd.Logger, start, end string) ([]string, error) {
+	e := errd.InitErr()
+	startYr, errS := strconv.Atoi(start)
+	endYr, errE := strconv.Atoi(end)
+	numY := endYr - startYr
+
+	if errS != nil || errE != nil {
+		e.Msg = "error converting start or end year to int"
+		l.WriteLog(e.Msg)
+		return nil, e.NewErr()
+	}
+
+	var szns []string
+	for y := range numY {
+		szns = append(szns,
+			fmt.Sprintf(
+				"%d-%s", startYr+y, strconv.Itoa(startYr + (y + 1))[2:]),
+		)
+	}
+	szns = append(szns, fmt.Sprintf("%d-%s", endYr, strconv.Itoa(endYr + 1)[2:]))
+	return szns, nil
 }
 
 /*
