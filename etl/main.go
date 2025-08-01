@@ -25,7 +25,7 @@ func main() {
 
 	// SET START AND END SEASONS
 	// var st string = "1970"
-	var st string = "2022"
+	var st string = "2024"
 	var en string = time.Now().Format("2006") // current year
 	// var en string = "1970"
 
@@ -35,7 +35,7 @@ func main() {
 	e := errd.InitErr() // start error handler
 
 	// initialize logger
-	l, err := logd.InitLogger("log", "full_etl")
+	l, err := logd.InitLogger("z_log", "full_etl")
 	if err != nil {
 		e.Msg = "error initializing logger"
 		log.Fatal(e.BuildErr(err))
@@ -55,6 +55,13 @@ func main() {
 	cnf.db = db // asign to cnf
 	cnf.db.SetMaxOpenConns(40)
 	cnf.db.SetMaxIdleConns(20)
+
+	if err := CrntPlayersETL(cnf, "1"); err != nil {
+		e.Msg = "error getting players"
+		cnf.l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
+
 	// CREATE SLICE OF SEASONS FROM START/END YEARS
 	szns, err := SznSlice(l, st, en)
 	if err != nil {
