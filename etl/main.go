@@ -65,6 +65,7 @@ func main() {
 	// run ETL (http request, clean data, insert into db) for each season
 	for _, s := range szns {
 		sra := cnf.rc // capture row count at start of each season
+		stT := time.Now()
 		err = GLogSeasonETL(&cnf, s)
 		if err != nil {
 			e.Msg = "error inserting data"
@@ -72,7 +73,8 @@ func main() {
 			log.Fatal(e.BuildErr(err))
 		} // log finished with season etl
 		cnf.l.WriteLog(fmt.Sprint(
-			"====  finished with ", s,
+			fmt.Sprintf("====  finished with %s season ETL after %v",
+				s, time.Since(stT)),
 			fmt.Sprintf(
 				"\n== total rows before: %d | total rows after: %d",
 				sra, cnf.rc),
@@ -85,6 +87,14 @@ func main() {
 		"\n====  finished %d seasons between %s and %s | total rows affected: %d",
 		len(szns), st, en, cnf.rc,
 	))
+
+	// write errors to the log
+	if len(cnf.errs) > 0 {
+		cnf.l.WriteLog(fmt.Sprintln("ERRORS:"))
+		for _, e := range cnf.errs {
+			cnf.l.WriteLog(fmt.Sprintln(e))
+		}
+	}
 
 	// email log file to myself
 	EmailLog(cnf.l)

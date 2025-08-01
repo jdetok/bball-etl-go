@@ -65,7 +65,7 @@ as many full []any as necessary to keep the total number of values under 65,535.
 **execs much quicker
 */
 func (ins *InsertStmnt) ChunkVals() {
-	const PG_MAX int = 10000 // MUST BE < 65,535
+	const PG_MAX int = 2500 // MUST BE < 65,535
 	var totRows int = len(ins.Rows)
 	var valsPer int = len(ins.Rows[0])
 	var maxRows int = PG_MAX / valsPer
@@ -101,25 +101,29 @@ func (ins *InsertStmnt) InsertFast(cnf *Conf) error {
 		wg.Add(1)
 		go func(i int, c [][]any) {
 			defer wg.Done()
-			fmt.Printf("-- INFO: starting chunk %d/%d\n", i+1, len(ins.Chunks))
+			st := time.Now()
+			cnf.l.WriteLog(
+				fmt.Sprintf(
+					"starting chunk %d/%d - %v", i+1, len(ins.Chunks), st))
 			res, err := cnf.db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
 			if err != nil {
 				e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
 				errCh <- e.BuildErr(err)
 				return
 			}
-			stats := cnf.db.Stats()
-			fmt.Printf("Open connections: %d, In use: %d, Idle: %d, Wait count: %d\n",
-				stats.OpenConnections, stats.InUse, stats.Idle, stats.WaitCount)
 			ra, _ := res.RowsAffected()
 			mu.Lock()
 			cnf.rc += ra // add rows affected to total
 			cnf.l.WriteLog(
 				fmt.Sprint(
-					fmt.Sprintf(
-						"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
-						i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl),
-					"\n---- total rows affected: ", cnf.rc))
+					fmt.Sprintf("chunk %d/%d complete | rowsets: %d | vals: %d\n",
+						i+1, len(ins.Chunks), len(c), len(ValsFromSet(c))),
+					fmt.Sprintln("- ", time.Now()),
+					fmt.Sprintln("- ", time.Since(st)),
+					fmt.Sprintf("-- %d new rows inserted into %s\n", ra, ins.Tbl),
+					fmt.Sprintln("-- total rows affected: ", cnf.rc),
+				),
+			)
 			mu.Unlock()
 			time.Sleep(1 * time.Second)
 
