@@ -1,9 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/jdetok/golib/errd"
 	"github.com/jdetok/golib/logd"
@@ -35,8 +37,10 @@ func SznSlice(l logd.Logger, start, end string) ([]string, error) {
 	for y := range numY {
 		szns = append(szns,
 			fmt.Sprintf(
-				"%d-%s", startYr+y, strconv.Itoa(startYr + (y + 1))[2:]))
+				"%d-%s", startYr+y, strconv.Itoa(startYr + (y + 1))[2:]),
+		)
 	}
+	szns = append(szns, fmt.Sprintf("%d-%s", endYr, strconv.Itoa(endYr + 1)[2:]))
 	return szns, nil
 }
 
@@ -45,73 +49,94 @@ TODO AFTER MEDS:
 create a type to store the logger, database, AND a row counter
 update IN THE INSERT FUNC directly with pointer
 */
-/*
+
 type Conf struct {
-	e  errd.Err
 	l  logd.Logger
-	rc int // row counter
+	db *sql.DB
+	rc int64 // row counter
 }
-*/
+
 func main() {
 	e := errd.InitErr()
-
+	var sTime time.Time = time.Now()
+	var cnf Conf
 	// initialize logger
 	l, err := logd.InitLogger("log", "etl")
-
 	if err != nil {
 		e.Msg = "error initializing logger"
 		log.Fatal(e.BuildErr(err))
 	}
-
-	szns, err := SznSlice(l, "2010", "2020")
+	cnf.l = l
+	var st string = "1994"
+	var en string = "1996"
+	szns, err := SznSlice(l, st, en)
 	if err != nil {
 		e.Msg = "error making seasons string"
 		log.Fatal(e.BuildErr(err))
 	}
-	fmt.Println(szns)
 
 	// postgres connection
 	pg := pgresd.GetEnvPG()
 	pg.MakeConnStr()
 	db, err := pg.Conn()
-
 	if err != nil {
 		e.Msg = "error connecting to postgres"
 		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
+	cnf.db = db
 
+	cnf.rc = 0
+	for _, s := range szns {
+		err = GLogSeasonETL(&cnf, s)
+		if err != nil {
+			e.Msg = "error inserting data"
+			cnf.l.WriteLog(e.Msg)
+			log.Fatal(e.BuildErr(err))
+		}
+	}
+
+	EmailLog(cnf.l)
+
+	if err != nil {
+		e.Msg = "error emailing log"
+		cnf.l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
+
+	var cTime time.Time = time.Now()
+	cnf.l.WriteLog(
+		fmt.Sprint(
+			"process complete",
+			fmt.Sprintf(
+				"\n ---- start time: %v", sTime),
+			fmt.Sprintf(
+				"\n ---- complete time: %v", cTime),
+			fmt.Sprintf(
+				"\n ---- duration: %v", time.Since(sTime)),
+			fmt.Sprintf(
+				"\n---- %d seasons between  %s and %s | total rows affected: %d",
+				len(szns), st, en, cnf.rc,
+			),
+		),
+	)
+}
+
+/*
 	if err := CrntPlayersETL(l, db, "1"); err != nil {
 		e.Msg = "error getting players"
 		l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
+*/
+// fetch & insert current (as of yesterday) stats for NBA and WNBA
+// err = GLogDailyETL(l, db)
 
-	// fetch & insert current (as of yesterday) stats for NBA and WNBA
-	// err = GLogDailyETL(l, db)
+// err = GLogSeasonETL(cnf, SZN)
+// if err != nil {
+// 	e.Msg = "error inserting data"
+// 	l.WriteLog(e.Msg)
+// 	log.Fatal(e.BuildErr(err))
+// }
 
-	for _, s := range szns {
-		err = GLogSeasonETL(l, db, s)
-		if err != nil {
-			e.Msg = "error inserting data"
-			l.WriteLog(e.Msg)
-			log.Fatal(e.BuildErr(err))
-		}
-	}
-
-	// err = GLogSeasonETL(l, db, SZN)
-	// if err != nil {
-	// 	e.Msg = "error inserting data"
-	// 	l.WriteLog(e.Msg)
-	// 	log.Fatal(e.BuildErr(err))
-	// }
-
-	EmailLog(l)
-
-	if err != nil {
-		e.Msg = "error emailing log"
-		l.WriteLog(e.Msg)
-		log.Fatal(e.BuildErr(err))
-	}
-
-}
+// }

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/jdetok/golib/errd"
-	"github.com/jdetok/golib/logd"
 )
 
 type InsertStmnt struct {
@@ -91,19 +89,23 @@ func (ins *InsertStmnt) ChunkVals() {
 }
 
 // loop through the chunks & attempt to insert all rows from each one
-func (ins *InsertStmnt) Insert(l logd.Logger, db *sql.DB) error {
+func (ins *InsertStmnt) Insert(cnf *Conf) error {
 	e := errd.InitErr()
 	for i, c := range ins.Chunks {
-		res, err := db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
+		res, err := cnf.db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
 			return e.BuildErr(err)
 		}
 		ra, _ := res.RowsAffected()
-		l.WriteLog(
-			fmt.Sprintf(
-				"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
-				i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl))
+		cnf.rc += ra // add rows affected to total
+		cnf.l.WriteLog(
+			fmt.Sprint(
+				fmt.Sprintf(
+					"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
+					i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl),
+				"\n---- total rows affected: ", cnf.rc,
+			))
 	}
 	return nil
 }

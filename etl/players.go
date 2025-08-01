@@ -1,11 +1,9 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/jdetok/golib/errd"
-	"github.com/jdetok/golib/logd"
 )
 
 func PlayerReq(onlyCurrent, league, season string) GetReq {
@@ -38,13 +36,13 @@ func PlayersParams() LgTbls {
 	return lt
 }
 
-func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
+func CrntPlayersETL(cnf Conf, onlyCurrent string) error {
 	e := errd.InitErr()
 	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
 	pp := PlayersParams()
 
-	l.WriteLog(fmt.Sprintf(
+	cnf.l.WriteLog(fmt.Sprintf(
 		"attempting current players ETL for %s nba season and %s wnba season",
 		sl.Szn, sl.WSzn))
 	for i := range pp.lgs {
@@ -56,13 +54,13 @@ func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 			lg = "wnba"
 		}
 
-		l.WriteLog(fmt.Sprintf("attempting to insert current %s players", lg))
+		cnf.l.WriteLog(fmt.Sprintf("attempting to insert current %s players", lg))
 		// r := PlayerReq(onlyCurrent, p[0], p[1])
 		r := PlayerReq(onlyCurrent, pp.lgs[i], szns[i])
-		resp, err := RequestResp(l, r)
+		resp, err := RequestResp(cnf.l, r)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
-			l.WriteLog(e.Msg)
+			cnf.l.WriteLog(e.Msg)
 			return e.BuildErr(err)
 		}
 
@@ -73,10 +71,10 @@ func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 		fmt.Println("Cols Length:", len(cols), "Rows Length:", len(rows))
 
 		if len(rows) == 0 {
-			l.WriteLog("response returned 0 rows, exiting")
+			cnf.l.WriteLog("response returned 0 rows, exiting")
 			return nil
 		}
-		l.WriteLog(
+		cnf.l.WriteLog(
 			fmt.Sprintf("response returned %d fields & %d rows",
 				len(cols), len(rows)))
 
@@ -87,10 +85,10 @@ func CrntPlayersETL(l logd.Logger, db *sql.DB, onlyCurrent string) error {
 			cols,
 			rows,
 		) // attempt to insert rows from response
-		ins.Insert(l, db)
+		ins.Insert(&cnf)
 
-		l.WriteLog(fmt.Sprintf("current %s players ETL complete", lg))
+		cnf.l.WriteLog(fmt.Sprintf("current %s players ETL complete", lg))
 	}
-	l.WriteLog("current players ETL complete for all leagues")
+	cnf.l.WriteLog("current players ETL complete for all leagues")
 	return nil
 }
