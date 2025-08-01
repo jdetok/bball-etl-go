@@ -81,6 +81,7 @@ func GLogSeasonETL(cnf *Conf, szn string) error {
 	if err != nil {
 		e.Msg = fmt.Sprintf("error running ETL for %s", szn)
 		cnf.l.WriteLog(e.Msg)
+		cnf.errs = append(cnf.errs, e.Msg) // capture if an error occured
 		return e.BuildErr(err)
 	}
 	return nil

@@ -65,7 +65,7 @@ as many full []any as necessary to keep the total number of values under 65,535.
 **execs much quicker
 */
 func (ins *InsertStmnt) ChunkVals() {
-	const PG_MAX int = 20000 // MUST BE < 65,535
+	const PG_MAX int = 10000 // MUST BE < 65,535
 	var totRows int = len(ins.Rows)
 	var valsPer int = len(ins.Rows[0])
 	var maxRows int = PG_MAX / valsPer

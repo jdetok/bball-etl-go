@@ -13,9 +13,10 @@ import (
 
 // Conf struct, only have to pass this to access logger, db, row count, etc
 type Conf struct {
-	l  logd.Logger
-	db *sql.DB
-	rc int64 // row counter
+	l    logd.Logger
+	db   *sql.DB
+	rc   int64 // row counter
+	errs []string
 }
 
 func main() {
@@ -23,8 +24,8 @@ func main() {
 	var sTime time.Time = time.Now()
 
 	// SET START AND END SEASONS
-	var st string = "1990"
-	var en string = "1999"
+	var st string = "1985"
+	var en string = time.Now().Format("2006") // current year
 
 	// Conf variable, hold logger, db, etc
 	var cnf Conf
@@ -32,7 +33,7 @@ func main() {
 	e := errd.InitErr() // start error handler
 
 	// initialize logger
-	l, err := logd.InitLogger("log", "etl")
+	l, err := logd.InitLogger("log", "full_etl")
 	if err != nil {
 		e.Msg = "error initializing logger"
 		log.Fatal(e.BuildErr(err))
