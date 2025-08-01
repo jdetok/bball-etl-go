@@ -153,5 +153,5 @@ func GameLogETL(cnf *Conf, r GetReq, tbl, primKey string) error {
 		cols,
 		rows,
 	) // attempt to insert rows from response
-	return ins.Insert(cnf)
+	return ins.InsertFast(cnf)
 }

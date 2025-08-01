@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/jdetok/golib/errd"
 )
@@ -86,6 +88,54 @@ func (ins *InsertStmnt) ChunkVals() {
 		var valChunk [][]any = ins.Rows[c[0]:c[1]]
 		ins.Chunks = append(ins.Chunks, valChunk)
 	}
+}
+
+// loop through the chunks & attempt to insert all rows from each one
+func (ins *InsertStmnt) InsertFast(cnf *Conf) error {
+	e := errd.InitErr()
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	errCh := make(chan error, len(ins.Chunks))
+
+	for i, c := range ins.Chunks {
+		wg.Add(1)
+		go func(i int, c [][]any) {
+			defer wg.Done()
+			fmt.Printf("-- INFO: starting chunk %d/%d\n", i+1, len(ins.Chunks))
+			res, err := cnf.db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
+			if err != nil {
+				e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
+				errCh <- e.BuildErr(err)
+				return
+			}
+			stats := cnf.db.Stats()
+			fmt.Printf("Open connections: %d, In use: %d, Idle: %d, Wait count: %d\n",
+				stats.OpenConnections, stats.InUse, stats.Idle, stats.WaitCount)
+			ra, _ := res.RowsAffected()
+			mu.Lock()
+			cnf.rc += ra // add rows affected to total
+			cnf.l.WriteLog(
+				fmt.Sprint(
+					fmt.Sprintf(
+						"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
+						i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl),
+					"\n---- total rows affected: ", cnf.rc))
+			mu.Unlock()
+			time.Sleep(1 * time.Second)
+
+		}(i, c)
+
+	}
+
+	wg.Wait()
+	close(errCh)
+	if len(errCh) > 0 {
+		err := <-errCh
+		e.Msg = "one or more chunks failed to insert"
+		return e.BuildErr(err)
+	}
+
+	return nil
 }
 
 // loop through the chunks & attempt to insert all rows from each one

@@ -11,6 +11,7 @@ import (
 	"github.com/jdetok/golib/pgresd"
 )
 
+// Conf struct, only have to pass this to access logger, db, row count, etc
 type Conf struct {
 	l  logd.Logger
 	db *sql.DB
@@ -22,8 +23,8 @@ func main() {
 	var sTime time.Time = time.Now()
 
 	// SET START AND END SEASONS
-	var st string = "2004"
-	var en string = "2007"
+	var st string = "1990"
+	var en string = "1999"
 
 	// Conf variable, hold logger, db, etc
 	var cnf Conf
@@ -47,8 +48,10 @@ func main() {
 		cnf.l.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
-	cnf.db = db // asign to cnf
 
+	cnf.db = db // asign to cnf
+	cnf.db.SetMaxOpenConns(40)
+	cnf.db.SetMaxIdleConns(20)
 	// CREATE SLICE OF SEASONS FROM START/END YEARS
 	szns, err := SznSlice(l, st, en)
 	if err != nil {
