@@ -24,8 +24,9 @@ func main() {
 	var sTime time.Time = time.Now()
 
 	// SET START AND END SEASONS
-	var st string = "1985"
+	var st string = "1970"
 	var en string = time.Now().Format("2006") // current year
+	// var en string = "1970"
 
 	// Conf variable, hold logger, db, etc
 	var cnf Conf
