@@ -25,7 +25,7 @@ func main() {
 
 	// SET START AND END SEASONS
 	// var st string = "1970"
-	var st string = "2024"
+	var st string = "1970"
 	var en string = time.Now().Format("2006") // current year
 	// var en string = "1970"
 
