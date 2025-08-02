@@ -30,6 +30,12 @@ create table stats.pbox (
     primary key (game_id, player_id)
 );
 
+create index idx_pbox_szn on stats.pbox(szn_id);
+create index idx_pbox_team on stats.pbox(team_id);
+create index idx_pbox_gdate on stats.pbox(gdate);
+create index idx_pbox_matchup on stats.pbox(matchup);
+create index idx_pbox_wl on stats.pbox(wl);
+
 create table stats.tbox (
     szn_id int references lg.szn(szn_id),
     team_id bigint not null references lg.team(team_id),
@@ -59,3 +65,8 @@ create table stats.tbox (
     ftp numeric(5, 4),
     primary key (game_id, team_id)
 );
+
+create index idx_tbox_szn on stats.tbox(szn_id);
+create index idx_tbox_gdate on stats.tbox(gdate);
+create index idx_tbox_matchup on stats.tbox(matchup);
+create index idx_tbox_wl on stats.tbox(wl);

@@ -5,6 +5,8 @@ create table lg.league (
     lg_name varchar(255)
 );
 
+create index idx_lg on lg.league(lg);
+
 insert into lg.league values 
 	(99, 'nat', 'NAT', 'Not Assigned to a Team'),
     (0, 'nba', 'NBA', 'National Basketball Association'),
@@ -34,6 +36,11 @@ create table lg.szn (
     wszn_desc varchar(255)
 );
 
+create index idx_sznt on lg.szn(sznt_id);
+create index idx_szn on lg.szn(szn);
+create index idx_wszn on lg.szn(wszn);
+
+
 create table lg.team (
     lg_id int references lg.league(lg_id),
     team_id bigint primary key,
@@ -43,6 +50,10 @@ create table lg.team (
     team_city varchar(255),
     team_shrt varchar(255)
 );
+
+create index idx_team on lg.team(team);
+create index idx_tlg on lg.team(lg_id);
+create index idx_team_cde on lg.team(team_cde);
 
 insert into lg.team (lg_id, team_id, team, team_cde, team_long) values 
     (99, 0, 'NAT', 'noteam', 'Not Assigned');
@@ -56,6 +67,9 @@ create table lg.plr (
     from_year varchar(4),
     to_year varchar(4)
 );
+create index idx_plg on lg.plr(lg_id);
+create index idx_pfromyear on lg.plr(from_year);
+create index idx_ptoyear on lg.plr(to_year);
 
 create table lg.plr_crnt (
     lg_id int references lg.league(lg_id),
@@ -64,3 +78,6 @@ create table lg.plr_crnt (
     plr_cde varchar(255),
     primary key (player_id, team_id)
 );
+
+create index idx_cplg on lg.plr_crnt(lg_id);
+create index idx_cpt on lg.plr_crnt(team_id);
