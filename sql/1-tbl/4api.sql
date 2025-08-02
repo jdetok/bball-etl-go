@@ -3,6 +3,8 @@ TABLES IN API SCHEMA
 NEEDS TO MATCH `api_player_stats` from legacy mariadb to work with website
 */
 
+-- EXPLORE USING A VIEW OR NORMAL QUERY WITH THE NEW INDEXING
+
 create table if not exists api.plr_stats (
     player_id int references lg.plr(player_id),	
 	team_id int references lg.team(team_id),

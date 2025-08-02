@@ -27,7 +27,7 @@ create table stats.pbox (
     ftm int,
     fta int,
     ftp numeric(5, 4),
-    primary key (game_id, player_id)
+    primary key (team_id, game_id, player_id)
 );
 
 create index idx_pbox_szn on stats.pbox(szn_id);

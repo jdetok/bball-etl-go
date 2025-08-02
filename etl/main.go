@@ -25,7 +25,7 @@ func main() {
 
 	// SET START AND END SEASONS
 	// var st string = "1970"
-	var st string = "1970"
+	var st string = "2024"
 	var en string = time.Now().Format("2006") // current year
 	// var en string = "1970"
 
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	// CREATE SLICE OF SEASONS FROM START/END YEARS
-	szns, err := SznSlice(l, st, en)
+	szns, err := SznBSlice(l, st, en)
 	if err != nil {
 		e.Msg = "error making seasons string"
 		cnf.l.WriteLog(e.Msg)

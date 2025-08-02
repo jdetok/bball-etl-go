@@ -34,7 +34,7 @@ begin
             fta,
             ft_pct
         from intake.gm_player
-    on conflict (game_id, player_id) do nothing;
+    on conflict (team_id, game_id, player_id) do nothing;
 end; $$;
 -- call stats.sp_pbox();
 -- select * from stats.pbox;

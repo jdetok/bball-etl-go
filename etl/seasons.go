@@ -18,6 +18,30 @@ type SeasonLeague struct {
 func Yesterday(dt time.Time) string {
 	return dt.Add(-24 * time.Hour).Format("01/02/2006")
 }
+
+func SznBSlice(l logd.Logger, start, end string) ([]string, error) {
+	e := errd.InitErr()
+	startYr, errS := strconv.Atoi(start)
+	endYr, errE := strconv.Atoi(end)
+	numY := endYr - startYr
+
+	if errS != nil || errE != nil {
+		e.Msg = "error converting start or end year to int"
+		l.WriteLog(e.Msg)
+		return nil, e.NewErr()
+	}
+
+	var szns []string
+	for y := numY; y > 0; y-- {
+		szns = append(szns,
+			fmt.Sprintf(
+				"%d-%s", startYr+y, strconv.Itoa(startYr + (y + 1))[2:]),
+		)
+	}
+	szns = append(szns, fmt.Sprintf("%d-%s", startYr, strconv.Itoa(startYr + 1)[2:]))
+	return szns, nil
+}
+
 func SznSlice(l logd.Logger, start, end string) ([]string, error) {
 	e := errd.InitErr()
 	startYr, errS := strconv.Atoi(start)
