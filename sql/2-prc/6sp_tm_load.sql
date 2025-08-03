@@ -1,6 +1,9 @@
 /*
 insert new teams into lg.team from intake.gm_teama
 creates new concatenated column team_cde in format lal_lakers, bos_boston etc
+
+- ADDED JOIN FROM PLAYER FROM_YEAR TO SEASON ID IN GM_PLAYER
+-- THIS AVOIDS ISSUE WHERE SAC KINGS WERE SHOWING CINCINATTI AS THEIR CITY
 */ 
 
 create or replace procedure lg.sp_team_load()
@@ -18,7 +21,9 @@ begin
             b.team_city,
             b.team_name
         from intake.gm_team a
-        inner join intake.player b on b.team_id = a.team_id
+        inner join intake.player b 
+            on b.team_id = a.team_id
+            and b.from_year = right(cast(a.season_id as varchar(5)), 4)
         inner join (
             select 
                 team_id as t_id,
@@ -42,7 +47,9 @@ begin
             b.team_city,
             b.team_name
         from intake.gm_team a
-        inner join intake.wplayer b on b.team_id = a.team_id
+        inner join intake.wplayer b 
+            on b.team_id = a.team_id
+            and b.from_year = right(cast(a.season_id as varchar(5)), 4)
         inner join (
             select 
                 team_id as t_id,

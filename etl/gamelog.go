@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jdetok/golib/errd"
@@ -69,6 +70,18 @@ func GLogParams() LgTbls {
 func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 	e := errd.InitErr()
 	for i := range lgs { // outer loop, 2 calls per lg
+		sznY, err := strconv.Atoi(szn)
+		if err != nil {
+			e.Msg = fmt.Sprintf(
+				"getting int from season %s", szn)
+			cnf.l.WriteLog(e.Msg)
+			return e.BuildErr(err)
+		}
+		if lgs[i] == "10" && sznY < 1996 {
+			cnf.l.WriteLog(fmt.Sprintf(
+				"skipping WNBA %s - first WNBA season was 1997-98", szn))
+			continue
+		}
 		for _, t := range tbls {
 			// get reg and playoffs
 			for _, s := range []string{"Regular+Season", "Playoffs"} {
