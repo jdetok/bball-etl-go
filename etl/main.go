@@ -25,7 +25,8 @@ func main() {
 
 	// SET START AND END SEASONS
 	// var st string = "1970"
-	var st string = "2024"
+
+	var st string = "1970"
 	var en string = time.Now().Format("2006") // current year
 	// var en string = "1970"
 
@@ -54,14 +55,14 @@ func main() {
 
 	cnf.db = db // asign to cnf
 	cnf.db.SetMaxOpenConns(40)
-	cnf.db.SetMaxIdleConns(20)
-
-	if err := CrntPlayersETL(cnf, "1"); err != nil {
-		e.Msg = "error getting players"
-		cnf.l.WriteLog(e.Msg)
-		log.Fatal(e.BuildErr(err))
-	}
-
+	cnf.db.SetMaxIdleConns(40)
+	/*
+		if err := CrntPlayersETL(cnf, "1"); err != nil {
+			e.Msg = "error getting players"
+			cnf.l.WriteLog(e.Msg)
+			log.Fatal(e.BuildErr(err))
+		}
+	*/
 	// CREATE SLICE OF SEASONS FROM START/END YEARS
 	szns, err := SznBSlice(l, st, en)
 	if err != nil {
@@ -75,11 +76,20 @@ func main() {
 	for _, s := range szns {
 		sra := cnf.rc // capture row count at start of each season
 		stT := time.Now()
+
+		// players etl for season
+		if err := SznPlayersETL(cnf, "1", s); err != nil {
+			e.Msg = fmt.Sprint("error getting players for ", s)
+			cnf.l.WriteLog(e.Msg)
+			fmt.Println(e.BuildErr(err))
+		}
+
+		// get team and player game logs for the season
 		err = GLogSeasonETL(&cnf, s)
 		if err != nil {
-			e.Msg = "error inserting data"
+			e.Msg = fmt.Sprint("error inserting data for ", s)
 			cnf.l.WriteLog(e.Msg)
-			log.Fatal(e.BuildErr(err))
+			fmt.Println(e.BuildErr(err))
 		} // log finished with season etl
 		cnf.l.WriteLog(fmt.Sprint(
 			fmt.Sprintf("====  finished with %s season ETL after %v",

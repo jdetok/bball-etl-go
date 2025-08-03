@@ -7,6 +7,26 @@ import (
 	"github.com/jdetok/golib/errd"
 )
 
+func GameLogReqNew(league, season, sType, plTm, dateFrom, dateTo string) GetReq {
+	var gr = GetReq{
+		Host:     HOST,
+		Headers:  HDRS,
+		Endpoint: "/stats/leaguegamelog",
+		Params: []Pair{
+			{"LeagueID", league},
+			{"Season", season},
+			{"SeasonType", sType},
+			{"Counter", "0"},
+			{"Sorter", "DATE"},
+			{"Direction", "DESC"},
+			{"PlayerOrTeam", plTm},
+			{"DateFrom", dateFrom},
+			{"DateTo", dateTo},
+		},
+	}
+	return gr
+}
+
 func GameLogReq(league, season, plTm, dateFrom, dateTo string) GetReq {
 	var gr = GetReq{
 		Host:     HOST,
@@ -50,25 +70,28 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 	e := errd.InitErr()
 	for i := range lgs { // outer loop, 2 calls per lg
 		for _, t := range tbls {
-			// create request
-			r := GameLogReq(lgs[i], szn, t.PlTm, "", "")
-			cnf.l.WriteLog(fmt.Sprintf(
-				"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s",
-				r.Endpoint, lgs[i], szn, t.PlTm))
+			// get reg and playoffs
+			for _, s := range []string{"Regular+Season", "Playoffs"} {
+				// create request
+				r := GameLogReqNew(lgs[i], szn, s, t.PlTm, "", "")
+				cnf.l.WriteLog(fmt.Sprintf(
+					"attempting to fetch %s: LG=%s, SZN=%s %s, PLTM=%s",
+					r.Endpoint, lgs[i], szn, s, t.PlTm))
 
-			// attempt to fetch & insert for current iteration
-			err := GameLogETL(cnf, r, t.Name, t.PrimKey)
-			if err != nil {
-				e.Msg = fmt.Sprintf(
-					"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s",
-					lgs[i], szn, t.PlTm)
-				cnf.l.WriteLog(e.Msg)
-				return e.BuildErr(err)
+				// attempt to fetch & insert for current iteration
+				err := GameLogETL(cnf, r, t.Name, t.PrimKey)
+				if err != nil {
+					e.Msg = fmt.Sprintf(
+						"error during daily game log ETL. LG=%s, SZN=%s %s, PLTM=%s",
+						lgs[i], szn, s, t.PlTm)
+					cnf.l.WriteLog(e.Msg)
+					return e.BuildErr(err)
+				}
+				// success, next call
+				cnf.l.WriteLog(fmt.Sprintf(
+					"finished with LG=%s, SZN=%s %s, PLTM=%s",
+					lgs[i], szn, s, t.PlTm))
 			}
-			// success, next call
-			cnf.l.WriteLog(fmt.Sprintf(
-				"finished with LG=%s, SZN=%s, PLTM=%s",
-				lgs[i], szn, t.PlTm))
 		}
 	}
 	return nil
