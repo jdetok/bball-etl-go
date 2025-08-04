@@ -25,7 +25,9 @@ insert into lg.szn_type values
     (3, 'PS', 'All-Star'),
     (4, 'PO', 'Playoffs'),
     (5, 'PI', 'Play-In Tournament'),
-    (6, 'NC', 'NBA Cup');
+    (6, 'NC', 'NBA Cup'),
+    (8, 'PA', 'Playoff Sesason Aggregates'),
+    (9, 'RA', 'Regular Sesason Aggregates');
 
 create table lg.szn (
     szn_id int primary key,
@@ -40,6 +42,8 @@ create index idx_sznt on lg.szn(sznt_id);
 create index idx_szn on lg.szn(szn);
 create index idx_wszn on lg.szn(wszn);
 
+insert into lg.szn values
+    (29999, )
 
 create table lg.team (
     lg_id int references lg.league(lg_id),
