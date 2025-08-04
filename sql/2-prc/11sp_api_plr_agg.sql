@@ -1,10 +1,26 @@
+/*
+THE VIEWS & PROCEDURES DEFINED IN THIS SCRIPT ARE RESPONSIBLE FOR INSERTING
+AGGREGATE PLAYER STATS INTO TABLE api.plr_agg
+FOR EACH PLAYER, STATS ARE AGGREGATED BY INDIVIDUAL REGULAR/POST SEASON, 
+CAREER REGULAR/POST SEASON, AND CAREER COMBINED REG/POST SEASON. 
+EACH PLAYER WILL HAVE TWO ROWS PER SEASON/AGG TYPE: ONE WITH AVERAGE (PER GAME)
+STATS AND ONE WITH SEASON TOTALS. S
+*/
+
+drop view api.v_plr_szn_tot;
+drop view api.v_plr_szn_avg;
+drop view api.v_plr_rp_tot;
+drop view api.v_plr_rp_avg;
+drop view api.v_plr_cc_tot;
+drop view api.v_plr_cc_avg;
+
 -- season totals
 create or replace view api.v_plr_szn_tot as
 select 
     a.player_id, max(a.team_id) as "team_id", d.lg, 
     a.szn_id, e.szn_desc, e.wszn_desc, 'tot' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long",
-    count(distinct a.game_id) as "gp", 
+    count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
 	sum(a.pts) as "points", sum(a.ast) as "assists", 
 	sum(a.reb) as "rebounds", sum(a.stl) as "steals", sum(a.blk) as "blocks", 
 	sum(a.fgm) as "fgm", sum(a.fga) as "fga",
@@ -24,7 +40,7 @@ inner join lg.plr b on b.player_id = a.player_id
 inner join lg.team c on c.team_id = a.team_id
 inner join lg.league d on d.lg_id = b.lg_id
 inner join lg.szn e on e.szn_id = a.szn_id
-where b.lg_id < 2 --and e.sznt_id = 2
+where b.lg_id < 2
 group by a.player_id, d.lg, a.szn_id, b.player, e.szn_desc, e.wszn_desc
 order by a.szn_id desc;
 
@@ -34,7 +50,7 @@ select
     a.player_id, max(a.team_id) as "team_id", d.lg, 
     a.szn_id, e.szn_desc, e.wszn_desc, 'avg' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long",
-    count(distinct a.game_id) as "gp",  
+    count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
     round(avg(a.pts), 2) as "points", round(avg(a.ast), 2) as "assists", 
 	round(avg(a.reb), 2) as "rebounds", round(avg(a.stl), 2) as "steals", 
     round(avg(a.blk), 2) as "blocks", 
@@ -66,7 +82,7 @@ select
     a.player_id, max(a.team_id) as "team_id", d.lg, 
     e.szn_id, e.szn_desc, e.wszn_desc, 'avg' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long",
-	count(distinct a.game_id) as "gp",
+	count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
     round(avg(a.pts), 2) as "points", round(avg(a.ast), 2) as "assists", 
 	round(avg(a.reb), 2) as "rebounds", round(avg(a.stl), 2) as "steals", 
     round(avg(a.blk), 2) as "blocks", 
@@ -97,7 +113,7 @@ select
     a.player_id, max(a.team_id) as "team_id", d.lg, 
     e.szn_id, e.szn_desc, e.wszn_desc, 'tot' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long",
-    count(distinct a.game_id) as "gp", 
+    count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
     sum(a.pts) as "points", sum(a.ast) as "assists", 
 	sum(a.reb) as "rebounds", sum(a.stl) as "steals", sum(a.blk) as "blocks", 
 	sum(a.fgm) as "fgm", sum(a.fga) as "fga",
@@ -126,9 +142,9 @@ group by a.player_id, d.lg, e.szn_id, b.player, e.szn_desc, e.wszn_desc;
 create or replace view api.v_plr_cc_avg as
 select 
     a.player_id, max(a.team_id) as "team_id", d.lg, 
-    e.szn_id, e.szn_desc, e.wszn_desc, 'tot' as "stype", 
+    e.szn_id, e.szn_desc, e.wszn_desc, 'avg' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long",
-    count(distinct a.game_id) as "gp", 
+    count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
     round(avg(a.pts), 2) as "points", round(avg(a.ast), 2) as "assists", 
 	round(avg(a.reb), 2) as "rebounds", round(avg(a.stl), 2) as "steals", 
     round(avg(a.blk), 2) as "blocks", 
@@ -158,7 +174,7 @@ select
     a.player_id, max(a.team_id) as "team_id", d.lg, 
     e.szn_id, e.szn_desc, e.wszn_desc, 'tot' as "stype", 
     b.player, max(c.team) as "team", max(c.team_long) as "team_long", 
-    count(distinct a.game_id) as "gp", 
+    count(distinct a.game_id) as "gp", sum(a.mins) as "minutes",
     sum(a.pts) as "points", sum(a.ast) as "assists", 
 	sum(a.reb) as "rebounds", sum(a.stl) as "steals", sum(a.blk) as "blocks", 
 	sum(a.fgm) as "fgm", sum(a.fga) as "fga",
@@ -180,3 +196,38 @@ inner join lg.league d on d.lg_id = b.lg_id
 inner join lg.szn e on e.szn_id = 99999
 where b.lg_id < 2 
 group by a.player_id, d.lg, e.szn_id, b.player, e.szn_desc, e.wszn_desc;
+
+
+-- ============================================================================
+/* 
+STORED PROCEDURE TO INSERT THE RESULTS OF THE VIEWS ABOVE INTO API TABLE
+*/ 
+create or replace procedure api.sp_plr_agg()
+language plpgsql
+as $$
+begin
+    -- delete all contents of table
+	raise notice 'deleting existing values in api.plr_agg';
+    delete from api.plr_agg;
+
+	-- season aggs
+	raise notice 'inserting season totals';
+    insert into api.plr_agg select * from api.v_plr_szn_tot;
+	
+	raise notice 'inserting season avgs';
+	insert into api.plr_agg select * from api.v_plr_szn_avg;
+
+	-- reg season/playoff aggs
+	raise notice 'inserting rs/playoff totals';
+    insert into api.plr_agg select * from api.v_plr_rp_tot;
+
+	raise notice 'inserting rs/playoff avgs';
+	insert into api.plr_agg select * from api.v_plr_rp_avg;
+
+	-- combined reg season/playoff aggs
+	raise notice 'inserting combined rs/playoff totals';
+    insert into api.plr_agg select * from api.v_plr_cc_tot;
+
+	raise notice 'inserting combined rs/playoff avgs';
+	insert into api.plr_agg select * from api.v_plr_cc_avg;
+end; $$;

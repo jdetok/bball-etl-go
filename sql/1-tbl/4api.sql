@@ -61,5 +61,5 @@ create table if not exists api.plr_agg (
 	ftm decimal(10,2),
 	fta decimal(10,2),
 	ftp varchar(10),
-    primary key (player_id, team_id, stat_type)
+    primary key (player_id, season_id, stat_type)
 );
