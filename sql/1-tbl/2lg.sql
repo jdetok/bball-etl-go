@@ -26,8 +26,7 @@ insert into lg.szn_type values
     (4, 'PO', 'Playoffs'),
     (5, 'PI', 'Play-In Tournament'),
     (6, 'NC', 'NBA Cup'),
-    (8, 'PA', 'Playoff Sesason Aggregates'),
-    (9, 'RA', 'Regular Sesason Aggregates');
+    (9, 'CA', 'Combined Aggregates');
 
 create table lg.szn (
     szn_id int primary key,
@@ -42,8 +41,11 @@ create index idx_sznt on lg.szn(sznt_id);
 create index idx_szn on lg.szn(szn);
 create index idx_wszn on lg.szn(wszn);
 
+-- insert aggregate seasons for api stats tables
 insert into lg.szn values
-    (29999, )
+    (29999, 2, 'CRS', 'Career Regular Season', 'CRS', 'Career Regular Season'),
+    (49999, 4, 'CPO', 'Career Playoffs', 'CPO', 'Career Playoffs'),
+    (99999, 9, 'CC', 'Career Combined', 'CC', 'Career Combined');
 
 create table lg.team (
     lg_id int references lg.league(lg_id),
@@ -85,3 +87,4 @@ create table lg.plr_crnt (
 
 create index idx_cplg on lg.plr_crnt(lg_id);
 create index idx_cpt on lg.plr_crnt(team_id);
+
