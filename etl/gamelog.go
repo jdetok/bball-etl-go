@@ -81,9 +81,9 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 			cnf.l.WriteLog(fmt.Sprintf(
 				"skipping WNBA %s - first WNBA season was 1997-98", szn))
 			continue
-		}
+		} // loop through tables (PlTm, intake.gm_team, intake.gm_player)
 		for _, t := range tbls {
-			// get reg and playoffs
+			// get player/team reg and playoffs
 			for _, s := range []string{"Regular+Season", "Playoffs"} {
 				// create request
 				r := GameLogReqNew(lgs[i], szn, s, t.PlTm, "", "")
@@ -92,6 +92,7 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 					r.Endpoint, lgs[i], szn, s, t.PlTm))
 
 				// attempt to fetch & insert for current iteration
+				// func returns run of insert
 				err := GameLogETL(cnf, r, t.Name, t.PrimKey)
 				if err != nil {
 					e.Msg = fmt.Sprintf(

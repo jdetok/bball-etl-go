@@ -85,7 +85,7 @@ func SznPlayersETL(cnf Conf, onlyCurrent, season string) error {
 			cols,
 			rows,
 		) // attempt to insert rows from response
-		ins.Insert(&cnf)
+		ins.InsertFast(&cnf)
 
 		cnf.l.WriteLog(fmt.Sprintf("%s %s players ETL complete", season, lg))
 	}
