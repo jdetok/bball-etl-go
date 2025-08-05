@@ -1,12 +1,42 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/jdetok/golib/errd"
+	"github.com/jdetok/golib/logd"
 )
+
+// Conf struct, only have to pass this to access logger, db, row count, etc
+type Conf struct {
+	l    logd.Logger
+	db   *sql.DB
+	rc   int64 // row counter
+	errs []string
+}
+
+func RunNightlyETL(cnf Conf) error {
+	e := errd.InitErr()
+
+	if err := CrntPlayersETL(cnf); err != nil {
+		e.Msg = "error with current players ETL"
+		cnf.l.WriteLog(e.Msg)
+		return e.BuildErr(err)
+	}
+
+	if err := GLogDailyETL(&cnf); err != nil {
+		e.Msg = "error with nightly game log ETL"
+		cnf.l.WriteLog(e.Msg)
+		return e.BuildErr(err)
+	}
+
+	cnf.l.WriteLog(fmt.Sprintf(
+		"\n====  finished with nightly ETL | total rows affected: %d", cnf.rc))
+	return nil
+}
 
 func RunSeasonETL(cnf Conf, startY, endY string) error {
 	e := errd.InitErr()

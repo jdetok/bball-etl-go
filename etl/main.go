@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -10,14 +9,6 @@ import (
 	"github.com/jdetok/golib/logd"
 	"github.com/jdetok/golib/pgresd"
 )
-
-// Conf struct, only have to pass this to access logger, db, row count, etc
-type Conf struct {
-	l    logd.Logger
-	db   *sql.DB
-	rc   int64 // row counter
-	errs []string
-}
 
 func main() {
 	// start time variable for logging
