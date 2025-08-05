@@ -35,7 +35,6 @@ begin
             ft_pct
         from intake.gm_team
     on conflict (game_id, team_id) do nothing;
-
 end; $$;
 -- call stats.sp_tbox();
 -- select * from stats.tbox;

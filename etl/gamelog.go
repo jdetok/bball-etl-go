@@ -70,7 +70,7 @@ func GLogParams() LgTbls {
 func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 	e := errd.InitErr()
 	for i := range lgs { // outer loop, 2 calls per lg
-		sznY, err := strconv.Atoi(szn)
+		sznY, err := strconv.Atoi(szn[:4])
 		if err != nil {
 			e.Msg = fmt.Sprintf(
 				"getting int from season %s", szn)

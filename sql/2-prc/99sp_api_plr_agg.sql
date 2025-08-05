@@ -6,14 +6,14 @@ CAREER REGULAR/POST SEASON, AND CAREER COMBINED REG/POST SEASON.
 EACH PLAYER WILL HAVE TWO ROWS PER SEASON/AGG TYPE: ONE WITH AVERAGE (PER GAME)
 STATS AND ONE WITH SEASON TOTALS. S
 */
-
-drop view api.v_plr_szn_tot;
-drop view api.v_plr_szn_avg;
-drop view api.v_plr_rp_tot;
-drop view api.v_plr_rp_avg;
-drop view api.v_plr_cc_tot;
-drop view api.v_plr_cc_avg;
-
+/*
+drop view if exists api.v_plr_szn_tot;
+drop view if exists api.v_plr_szn_avg;
+drop view if exists api.v_plr_rp_tot;
+drop view if exists api.v_plr_rp_avg;
+drop view if exists api.v_plr_cc_tot;
+drop view if exists api.v_plr_cc_avg;
+*/
 -- season totals
 create or replace view api.v_plr_szn_tot as
 select 
