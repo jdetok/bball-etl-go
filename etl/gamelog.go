@@ -138,20 +138,30 @@ func GLogDailyETL(cnf *Conf) error {
 	// makes 4 calls to leaguegamelog endpoint
 	for i := range lt.lgs { // outer loop, 2 calls per lg
 		for _, t := range lt.tbls {
-			// create request
-			r := GameLogReq(lt.lgs[i], szns[i], t.PlTm, yesterday, yesterday)
-			cnf.l.WriteLog(fmt.Sprintf(
-				"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s, DATE=%s",
-				r.Endpoint, lt.lgs[i], szns[i], t.PlTm, yesterday))
+			for _, s := range []string{"Regular+Season", "Playoffs"} {
+				// create request
+				r := GameLogReqNew(
+					lt.lgs[i], szns[i], s, t.PlTm, yesterday, yesterday)
+				cnf.l.WriteLog(fmt.Sprintf(
+					"attempting to fetch %s: LG=%s, SZN=%s %s, PLTM=%s, DATE=%s",
+					r.Endpoint, lt.lgs[i], szns[i], s, t.PlTm, yesterday))
+				// run etl
+				err := GameLogETL(cnf, r, t.Name, t.PrimKey)
+				if err != nil {
+					e.Msg = fmt.Sprintf(
+						"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s, DATE=%s",
+						lt.lgs[i], szns[i], t.PlTm, yesterday)
+					cnf.l.WriteLog(e.Msg)
+					return e.BuildErr(err)
+				}
+				// create request
+				// r := GameLogReq(lt.lgs[i], szns[i], t.PlTm, yesterday, yesterday)
+				// cnf.l.WriteLog(fmt.Sprintf(
+				// 	"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s, DATE=%s",
+				// 	r.Endpoint, lt.lgs[i], szns[i], t.PlTm, yesterday))
 
-			// attempt to fetch & insert for current iteration
-			err := GameLogETL(cnf, r, t.Name, t.PrimKey)
-			if err != nil {
-				e.Msg = fmt.Sprintf(
-					"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s, DATE=%s",
-					lt.lgs[i], szns[i], t.PlTm, yesterday)
-				cnf.l.WriteLog(e.Msg)
-				return e.BuildErr(err)
+				// attempt to fetch & insert for current iteration
+
 			}
 			// success, next call
 			cnf.l.WriteLog(fmt.Sprintf(

@@ -93,7 +93,7 @@ func SznPlayersETL(cnf Conf, onlyCurrent, season string) error {
 	return nil
 }
 
-func CrntPlayersETL(cnf Conf, onlyCurrent string) error {
+func CrntPlayersETL(cnf Conf) error {
 	e := errd.InitErr()
 	sl := GetSeasons()
 	var szns = []string{sl.Szn, sl.WSzn}
@@ -113,7 +113,7 @@ func CrntPlayersETL(cnf Conf, onlyCurrent string) error {
 
 		cnf.l.WriteLog(fmt.Sprintf("attempting to insert current %s players", lg))
 		// r := PlayerReq(onlyCurrent, p[0], p[1])
-		r := PlayerReq(onlyCurrent, pp.lgs[i], szns[i])
+		r := PlayerReq("1", pp.lgs[i], szns[i])
 		resp, err := RequestResp(cnf.l, r)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
@@ -142,7 +142,7 @@ func CrntPlayersETL(cnf Conf, onlyCurrent string) error {
 			cols,
 			rows,
 		) // attempt to insert rows from response
-		ins.Insert(&cnf)
+		ins.InsertFast(&cnf)
 
 		cnf.l.WriteLog(fmt.Sprintf("current %s players ETL complete", lg))
 	}

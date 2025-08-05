@@ -23,20 +23,18 @@ func main() {
 	// start time variable for logging
 	var sTime time.Time = time.Now()
 
-	// SET START AND END SEASONS
-	// var st string = "1970"
-
-	var st string = "1970"
-	var en string = time.Now().Format("2006") // current year
-	// var en string = "1970"
-
+	/*
+		// SET START AND END SEASONS
+		var st string = "1970"
+		var en string = time.Now().Format("2006") // current year
+	*/
 	// Conf variable, hold logger, db, etc
 	var cnf Conf
 
 	e := errd.InitErr() // start error handler
 
 	// initialize logger
-	l, err := logd.InitLogger("z_log", "full_etl")
+	l, err := logd.InitLogger("z_log", "nightly_etl")
 	if err != nil {
 		e.Msg = "error initializing logger"
 		log.Fatal(e.BuildErr(err))
@@ -56,13 +54,73 @@ func main() {
 	cnf.db = db // asign to cnf
 	cnf.db.SetMaxOpenConns(40)
 	cnf.db.SetMaxIdleConns(40)
+	cnf.rc = 0 // START ROW COUNTER AT 0 BEFORE ETL STARTS
+
+	if err = RunNightlyETL(cnf); err != nil {
+		e.Msg = fmt.Sprintf(
+			"error with %v nightly etl", Yesterday(time.Now()))
+		cnf.l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
 	/*
-		if err := CrntPlayersETL(cnf, "1"); err != nil {
-			e.Msg = "error getting players"
+		if err = RunSeasonETL(cnf, st, en); err != nil {
+			e.Msg = fmt.Sprintf(
+				"error running season etl: start year: %s | end year: %s", st, en)
 			cnf.l.WriteLog(e.Msg)
 			log.Fatal(e.BuildErr(err))
 		}
 	*/
+	// write errors to the log
+	if len(cnf.errs) > 0 {
+		cnf.l.WriteLog(fmt.Sprintln("ERRORS:"))
+		for _, e := range cnf.errs {
+			cnf.l.WriteLog(fmt.Sprintln(e))
+		}
+	}
+
+	// email log file to myself
+	EmailLog(cnf.l)
+	if err != nil {
+		e.Msg = "error emailing log"
+		cnf.l.WriteLog(e.Msg)
+		log.Fatal(e.BuildErr(err))
+	}
+	/*
+		// log SEASON process complete
+			cnf.l.WriteLog(
+				fmt.Sprint(
+					"process complete",
+					fmt.Sprintf(
+						"\n ---- start time: %v", sTime),
+					fmt.Sprintf(
+						"\n ---- cmplt time: %v", time.Now()),
+					fmt.Sprintf(
+						"\n ---- duration: %v", time.Since(sTime)),
+					fmt.Sprintf(
+						"\n---- etl for seasons between %s and %s | total rows affected: %d",
+						st, en, cnf.rc,
+					),
+				),
+			)*/
+	// log NIGHTLY process complete
+	cnf.l.WriteLog(
+		fmt.Sprint(
+			"process complete",
+			fmt.Sprintf(
+				"\n ---- start time: %v", sTime),
+			fmt.Sprintf(
+				"\n ---- cmplt time: %v", time.Now()),
+			fmt.Sprintf(
+				"\n ---- duration: %v", time.Since(sTime)),
+			fmt.Sprintf(
+				"\n---- nightly etl for %v complete | total rows affected: %d",
+				Yesterday(time.Now()), cnf.rc,
+			),
+		),
+	)
+}
+
+/*
 	// CREATE SLICE OF SEASONS FROM START/END YEARS
 	szns, err := SznBSlice(l, st, en)
 	if err != nil {
@@ -106,40 +164,7 @@ func main() {
 		"\n====  finished %d seasons between %s and %s | total rows affected: %d",
 		len(szns), st, en, cnf.rc,
 	))
-
-	// write errors to the log
-	if len(cnf.errs) > 0 {
-		cnf.l.WriteLog(fmt.Sprintln("ERRORS:"))
-		for _, e := range cnf.errs {
-			cnf.l.WriteLog(fmt.Sprintln(e))
-		}
-	}
-
-	// email log file to myself
-	EmailLog(cnf.l)
-	if err != nil {
-		e.Msg = "error emailing log"
-		cnf.l.WriteLog(e.Msg)
-		log.Fatal(e.BuildErr(err))
-	}
-
-	// log process complete
-	cnf.l.WriteLog(
-		fmt.Sprint(
-			"process complete",
-			fmt.Sprintf(
-				"\n ---- start time: %v", sTime),
-			fmt.Sprintf(
-				"\n ---- cmplt time: %v", time.Now()),
-			fmt.Sprintf(
-				"\n ---- duration: %v", time.Since(sTime)),
-			fmt.Sprintf(
-				"\n---- etl for %d seasons between %s and %s | total rows affected: %d",
-				len(szns), st, en, cnf.rc,
-			),
-		),
-	)
-}
+*/
 
 /*
 	if err := CrntPlayersETL(l, db, "1"); err != nil {
