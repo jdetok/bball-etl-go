@@ -3,7 +3,7 @@ language plpgsql
 as $$
 begin
 	-- drop current teams except for 0 placeholder
-	delete from lg.team where team_id > 0;
+	-- delete from lg.team where team_id > 0;
 
 	-- insert all teams from intake.gm_team & intake.[w]player
 	insert into lg.team
@@ -58,5 +58,6 @@ begin
 		and c.team_id > 0 -- no team_id = 0
 		group by a.season_id, a.team_id, a.team_abbreviation, 
 		    c.team_code, a.team_name, c.team_city, c.team_name
-		order by team_id;
+		order by team_id
+	on conflict(team_id) do nothing;
 end; $$;
