@@ -1,19 +1,37 @@
 # bball postgres database schema design overview
+## **NOTE: 
+- `intake.[w]player` refers to BOTH the tables intake.player and intake.wplayer
 ## intake
 - intake tables are inserted into by the [Go ETL process](https://github.com/jdetok/bball-etl-go)
 - the layout of intake tables directly match the JSON response from stats.nba.com endpoints 
 - ### tables
     - gm_player
+        - SOURCE: leaguegamelog endpoint, PlayerOrTeam=P
+        - pkey: game_id, player_id
     - gm_team
+        - SOURCE: leaguegamelog endpoint, PlayerOrTeam=T
+        - pkey: game_id, team_id
     - player
+        - nba players
+        - SOURCE: commonallplayers endpoint, LeagueID=00
+        - pkey: player_id
     - wplayer
+        - wnba players
+        - SOURCE: commonallplayers endpoint, LeagueID=10
+        - pkey: player_id
 ## lg
 the league schema is for core player/league/team data
 - ### tables 
     - league
+        SOURCE: insert run after table created
+        - pkey: lg_id
     - szn
+        SOURCE: intake.gm_team, intake.[w]player
+        - pkey: szn_id
     - team
+        - pkey: team_id
     - plr
+        - pkey: player_id
 - ### procedures
     - sp_szn_load()
         - sources seasons from gm_team, uses several functions to format & insert into lg.szn
@@ -41,7 +59,11 @@ the league schema is for core player/league/team data
 stats schema is for player/team box scores
 - ### tables
     - pbox
+        - SOURCE: intake.gm_player
+        - pkey: game_id, player_id
     - tbox
+        - SOURCE: intake.gm_team
+        - pkey: game_id, team_id
 - ### procedures
     - sp_tbox()
         - loads team box scores from intake.gm_team
