@@ -3,6 +3,7 @@ this file details instructions for building the bball database
 # bld.sh: startup script
 the bld.sh script, or some variation of it, shoudl be used to build the docker container, run the Go program to insert nba data into the intake schema, call the sp_build() stored procedure to populate other schemas with the data in intake
 ## 1. build docker image & compose up
+- ** NOTE: the port used in the compose file MUST match to PG_PORT in .env file for script to work
 - dev/testing: `docker compose -f devcompose.yaml up --build -d`
     - compose down if necessary: `docker compose -f devcompose.yaml down --rmi all` 
     - uses `devcompose.yaml` file
