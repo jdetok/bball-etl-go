@@ -34,8 +34,8 @@ the bld.sh script, or some variation of it, shoudl be used to build the docker c
 - `go run ./etl`
 - the two vars below can be edited in etl/main.go to change which seasons are fetched
 ```go
-    var st string = "1970"
-	var en string = time.Now().Format("2006") // current year
+var st string = "1970"
+var en string = time.Now().Format("2006") // current year
 ```
 - will fetch all seasons from `st` (start year) through `en` (end year)
     - by default, `en` is set to the current year
