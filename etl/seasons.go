@@ -16,7 +16,7 @@ type SeasonLeague struct {
 
 // pass a time (usually time.Now()), return string with yesterday's date
 func Yesterday(dt time.Time) string {
-	return dt.Add(-48 * time.Hour).Format("01/02/2006")
+	return dt.Add(-24 * time.Hour).Format("01/02/2006")
 }
 
 func SznBSlice(l logd.Logger, start, end string) ([]string, error) {
