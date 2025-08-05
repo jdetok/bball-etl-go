@@ -1,34 +1,12 @@
--- TEST DB BUILD WITHOUT STARTING UP A NEW DB
--- delete from all tables in all schemas except intake 
 /*
-this script assumes everything has already been built. the purpose is just to
-simulate starting from right after the GO etl process finishes. 
-the intake.[w]player tables, intake.gm_team, and intake.gm_player tables are
-fully populated. no stored procedures have yet been run, so the tables in the 
-lg, stats, and api schemas are all empty
+to be called at the end of db init (in docker entrypoint dir)
+sp_rebuild() also exists, which is identical but truncates tables first
+	- used for testing build sequence on an existing database
 */
-create or replace procedure sp_rebuild()
+create or replace procedure sp_build()
 language plpgsql
 as $$
 begin
-	raise notice e'deleting from api.plr_agg...\n';
-	truncate api.plr_agg cascade;
-	
-	raise notice e'deleting from stats.pbox...\n';
-	truncate stats.pbox cascade;
-	
-	raise notice e'deleting from stats.tbox...\n';
-	truncate stats.tbox cascade;
-	
-	raise notice e'deleting from lg.plr...\n';
-	truncate lg.plr cascade;
-	
-	raise notice e'deleting from lg.team...\n';
-	delete from lg.team where team_id > 0;
-	
-	raise notice e'deleting from lg.szn...\n';
-	delete from lg.szn where right(cast(szn_id as varchar(5)), 4) != '9999';
-
 	-- load seasons
 	raise notice e'inserting seasons...\n';
 	call lg.sp_szn_load();
@@ -75,4 +53,4 @@ begin
 	call api.sp_plr_agg();
 	raise notice e'player agg insert complete: %s\n', fn_cntstr('api.plr_agg');
 end; $$;
--- call sp_rebuild();
+-- call sp_build();

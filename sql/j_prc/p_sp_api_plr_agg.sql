@@ -207,27 +207,33 @@ language plpgsql
 as $$
 begin
     -- delete all contents of table
-	raise notice 'deleting existing values in api.plr_agg';
-    delete from api.plr_agg;
+	raise notice e'deleting existing values in api.plr_agg\n';
+    truncate api.plr_agg;
 
 	-- season aggs
 	raise notice 'inserting season totals';
     insert into api.plr_agg select * from api.v_plr_szn_tot;
-	
+	raise notice e'season totals complete: %s\n', fn_cntstr('api.plr_agg');
+
 	raise notice 'inserting season avgs';
 	insert into api.plr_agg select * from api.v_plr_szn_avg;
+	raise notice e'season avgs complete: %s\n', fn_cntstr('api.plr_agg');
 
 	-- reg season/playoff aggs
 	raise notice 'inserting rs/playoff totals';
     insert into api.plr_agg select * from api.v_plr_rp_tot;
+	raise notice e'regszn/playoff totals complete: %s\n', fn_cntstr('api.plr_agg');
 
 	raise notice 'inserting rs/playoff avgs';
 	insert into api.plr_agg select * from api.v_plr_rp_avg;
+	raise notice e'regszn/playoff avgs complete: %s\n', fn_cntstr('api.plr_agg');
 
 	-- combined reg season/playoff aggs
 	raise notice 'inserting combined rs/playoff totals';
     insert into api.plr_agg select * from api.v_plr_cc_tot;
+	raise notice e'combined totals complete: %s\n', fn_cntstr('api.plr_agg');
 
 	raise notice 'inserting combined rs/playoff avgs';
 	insert into api.plr_agg select * from api.v_plr_cc_avg;
+	raise notice e'combined avgs complete: %s\n', fn_cntstr('api.plr_agg');
 end; $$;
