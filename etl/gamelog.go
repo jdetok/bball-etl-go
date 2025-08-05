@@ -1,4 +1,4 @@
-package main
+package etl
 
 import (
 	"fmt"
@@ -74,11 +74,11 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 		if err != nil {
 			e.Msg = fmt.Sprintf(
 				"getting int from season %s", szn)
-			cnf.l.WriteLog(e.Msg)
+			cnf.L.WriteLog(e.Msg)
 			return e.BuildErr(err)
 		}
 		if lgs[i] == "10" && sznY < 1996 {
-			cnf.l.WriteLog(fmt.Sprintf(
+			cnf.L.WriteLog(fmt.Sprintf(
 				"skipping WNBA %s - first WNBA season was 1997-98", szn))
 			continue
 		} // loop through tables (PlTm, intake.gm_team, intake.gm_player)
@@ -87,7 +87,7 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 			for _, s := range []string{"Regular+Season", "Playoffs"} {
 				// create request
 				r := GameLogReqNew(lgs[i], szn, s, t.PlTm, "", "")
-				cnf.l.WriteLog(fmt.Sprintf(
+				cnf.L.WriteLog(fmt.Sprintf(
 					"attempting to fetch %s: LG=%s, SZN=%s %s, PLTM=%s",
 					r.Endpoint, lgs[i], szn, s, t.PlTm))
 
@@ -98,11 +98,11 @@ func GetManyGLogs(cnf *Conf, lgs []string, tbls []Table, szn string) error {
 					e.Msg = fmt.Sprintf(
 						"error during daily game log ETL. LG=%s, SZN=%s %s, PLTM=%s",
 						lgs[i], szn, s, t.PlTm)
-					cnf.l.WriteLog(e.Msg)
+					cnf.L.WriteLog(e.Msg)
 					return e.BuildErr(err)
 				}
 				// success, next call
-				cnf.l.WriteLog(fmt.Sprintf(
+				cnf.L.WriteLog(fmt.Sprintf(
 					"finished with LG=%s, SZN=%s %s, PLTM=%s",
 					lgs[i], szn, s, t.PlTm))
 			}
@@ -117,8 +117,8 @@ func GLogSeasonETL(cnf *Conf, szn string) error {
 	err := GetManyGLogs(cnf, lt.lgs, lt.tbls, szn)
 	if err != nil {
 		e.Msg = fmt.Sprintf("error running ETL for %s", szn)
-		cnf.l.WriteLog(e.Msg)
-		cnf.errs = append(cnf.errs, e.Msg) // capture if an error occured
+		cnf.L.WriteLog(e.Msg)
+		cnf.Errs = append(cnf.Errs, e.Msg) // capture if an error occured
 		return e.BuildErr(err)
 	}
 	return nil
@@ -142,7 +142,7 @@ func GLogDailyETL(cnf *Conf) error {
 				// create request
 				r := GameLogReqNew(
 					lt.lgs[i], szns[i], s, t.PlTm, yesterday, yesterday)
-				cnf.l.WriteLog(fmt.Sprintf(
+				cnf.L.WriteLog(fmt.Sprintf(
 					"attempting to fetch %s: LG=%s, SZN=%s %s, PLTM=%s, DATE=%s",
 					r.Endpoint, lt.lgs[i], szns[i], s, t.PlTm, yesterday))
 				// run etl
@@ -151,12 +151,12 @@ func GLogDailyETL(cnf *Conf) error {
 					e.Msg = fmt.Sprintf(
 						"error during daily game log ETL. LG=%s, SZN=%s, PLTM=%s, DATE=%s",
 						lt.lgs[i], szns[i], t.PlTm, yesterday)
-					cnf.l.WriteLog(e.Msg)
+					cnf.L.WriteLog(e.Msg)
 					return e.BuildErr(err)
 				}
 				// create request
 				// r := GameLogReq(lt.lgs[i], szns[i], t.PlTm, yesterday, yesterday)
-				// cnf.l.WriteLog(fmt.Sprintf(
+				// cnf.L.WriteLog(fmt.Sprintf(
 				// 	"attempting to fetch %s: LG=%s, SZN=%s, PLTM=%s, DATE=%s",
 				// 	r.Endpoint, lt.lgs[i], szns[i], t.PlTm, yesterday))
 
@@ -164,7 +164,7 @@ func GLogDailyETL(cnf *Conf) error {
 
 			}
 			// success, next call
-			cnf.l.WriteLog(fmt.Sprintf(
+			cnf.L.WriteLog(fmt.Sprintf(
 				"finished with LG=%s, SZN=%s, PLTM=%s, DATE=%s",
 				lt.lgs[i], szns[i], t.PlTm, yesterday))
 		}
@@ -176,10 +176,10 @@ func GameLogETL(cnf *Conf, r GetReq, tbl, primKey string) error {
 	e := errd.InitErr()
 
 	// call endpoint in HTTP request, return Resp struct
-	resp, err := RequestResp(cnf.l, r)
+	resp, err := RequestResp(cnf.L, r)
 	if err != nil {
 		e.Msg = fmt.Sprintf("error getting response for %s", r.Endpoint)
-		cnf.l.WriteLog(e.Msg)
+		cnf.L.WriteLog(e.Msg)
 		return e.BuildErr(err)
 	}
 
@@ -187,10 +187,10 @@ func GameLogETL(cnf *Conf, r GetReq, tbl, primKey string) error {
 	var cols []string = resp.ResultSets[0].Headers
 	var rows [][]any = resp.ResultSets[0].RowSet
 	if len(rows) == 0 {
-		cnf.l.WriteLog("response returned 0 rows, exiting")
+		cnf.L.WriteLog("response returned 0 rows, exiting")
 		return nil
 	}
-	cnf.l.WriteLog(
+	cnf.L.WriteLog(
 		fmt.Sprintf("response returned %d fields & %d rows",
 			len(cols), len(rows)))
 

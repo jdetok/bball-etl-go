@@ -1,4 +1,4 @@
-package main
+package etl
 
 import (
 	"fmt"
@@ -102,10 +102,10 @@ func (ins *InsertStmnt) InsertFast(cnf *Conf) error {
 		go func(i int, c [][]any) {
 			defer wg.Done()
 			st := time.Now()
-			cnf.l.WriteLog(
+			cnf.L.WriteLog(
 				fmt.Sprintf(
 					"starting chunk %d/%d - %v", i+1, len(ins.Chunks), st))
-			res, err := cnf.db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
+			res, err := cnf.DB.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
 			if err != nil {
 				e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
 				errCh <- e.BuildErr(err)
@@ -113,15 +113,15 @@ func (ins *InsertStmnt) InsertFast(cnf *Conf) error {
 			}
 			ra, _ := res.RowsAffected()
 			mu.Lock()
-			cnf.rc += ra // add rows affected to total
-			cnf.l.WriteLog(
+			cnf.RowCnt += ra // add rows affected to total
+			cnf.L.WriteLog(
 				fmt.Sprint(
 					fmt.Sprintf("chunk %d/%d complete | rowsets: %d | vals: %d\n",
 						i+1, len(ins.Chunks), len(c), len(ValsFromSet(c))),
 					fmt.Sprintln("- ", time.Now()),
 					fmt.Sprintln("- ", time.Since(st)),
 					fmt.Sprintf("-- %d new rows inserted into %s\n", ra, ins.Tbl),
-					fmt.Sprintln("-- total rows affected: ", cnf.rc),
+					fmt.Sprintln("-- total rows affected: ", cnf.RowCnt),
 				),
 			)
 			mu.Unlock()
@@ -146,19 +146,19 @@ func (ins *InsertStmnt) InsertFast(cnf *Conf) error {
 func (ins *InsertStmnt) Insert(cnf *Conf) error {
 	e := errd.InitErr()
 	for i, c := range ins.Chunks {
-		res, err := cnf.db.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
+		res, err := cnf.DB.Exec(ins.BuildStmnt(c), ValsFromSet(c)...)
 		if err != nil {
 			e.Msg = fmt.Sprintf("error inserting chunk %d/%d", i+1, len(ins.Chunks))
 			return e.BuildErr(err)
 		}
 		ra, _ := res.RowsAffected()
-		cnf.rc += ra // add rows affected to total
-		cnf.l.WriteLog(
+		cnf.RowCnt += ra // add rows affected to total
+		cnf.L.WriteLog(
 			fmt.Sprint(
 				fmt.Sprintf(
 					"chunk %d/%d: rowsets: %d | vals: %d\n---- %d new rows inserted into %s",
 					i+1, len(ins.Chunks), len(c), len(ValsFromSet(c)), ra, ins.Tbl),
-				"\n---- total rows affected: ", cnf.rc,
+				"\n---- total rows affected: ", cnf.RowCnt,
 			))
 	}
 	return nil

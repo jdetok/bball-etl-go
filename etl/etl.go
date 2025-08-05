@@ -1,4 +1,4 @@
-package main
+package etl
 
 import (
 	"database/sql"
@@ -12,10 +12,10 @@ import (
 
 // Conf struct, only have to pass this to access logger, db, row count, etc
 type Conf struct {
-	l    logd.Logger
-	db   *sql.DB
-	rc   int64 // row counter
-	errs []string
+	L      logd.Logger
+	DB     *sql.DB
+	RowCnt int64 // row counter
+	Errs   []string
 }
 
 func RunNightlyETL(cnf Conf) error {
@@ -23,39 +23,39 @@ func RunNightlyETL(cnf Conf) error {
 
 	if err := CrntPlayersETL(cnf); err != nil {
 		e.Msg = "error with current players ETL"
-		cnf.l.WriteLog(e.Msg)
+		cnf.L.WriteLog(e.Msg)
 		return e.BuildErr(err)
 	}
 
 	if err := GLogDailyETL(&cnf); err != nil {
 		e.Msg = "error with nightly game log ETL"
-		cnf.l.WriteLog(e.Msg)
+		cnf.L.WriteLog(e.Msg)
 		return e.BuildErr(err)
 	}
 
-	cnf.l.WriteLog(fmt.Sprintf(
-		"\n====  finished with nightly ETL | total rows affected: %d", cnf.rc))
+	cnf.L.WriteLog(fmt.Sprintf(
+		"\n====  finished with nightly ETL | total rows affected: %d", cnf.RowCnt))
 	return nil
 }
 
 func RunSeasonETL(cnf Conf, startY, endY string) error {
 	e := errd.InitErr()
 
-	szns, err := SznBSlice(cnf.l, startY, endY)
+	szns, err := SznBSlice(cnf.L, startY, endY)
 	if err != nil {
 		e.Msg = "error making seasons string"
-		cnf.l.WriteLog(e.Msg)
+		cnf.L.WriteLog(e.Msg)
 		log.Fatal(e.BuildErr(err))
 	}
 
 	for _, s := range szns {
-		sra := cnf.rc // capture row count at start of each season
+		sra := cnf.RowCnt // capture row count at start of each season
 		stT := time.Now()
 
 		// players etl for season
 		if err := SznPlayersETL(cnf, "1", s); err != nil {
 			e.Msg = fmt.Sprint("error getting players for ", s)
-			cnf.l.WriteLog(e.Msg)
+			cnf.L.WriteLog(e.Msg)
 			fmt.Println(e.BuildErr(err))
 		}
 
@@ -63,23 +63,23 @@ func RunSeasonETL(cnf Conf, startY, endY string) error {
 		err = GLogSeasonETL(&cnf, s)
 		if err != nil {
 			e.Msg = fmt.Sprint("error inserting data for ", s)
-			cnf.l.WriteLog(e.Msg)
+			cnf.L.WriteLog(e.Msg)
 			fmt.Println(e.BuildErr(err))
 		} // log finished with season etl
-		cnf.l.WriteLog(fmt.Sprint(
+		cnf.L.WriteLog(fmt.Sprint(
 			fmt.Sprintf("====  finished with %s season ETL after %v",
 				s, time.Since(stT)),
 			fmt.Sprintf(
 				"\n== total rows before: %d | total rows after: %d",
-				sra, cnf.rc),
+				sra, cnf.RowCnt),
 			fmt.Sprintf(
-				"\n== rows affected from %s fetch: %d", s, cnf.rc-sra),
+				"\n== rows affected from %s fetch: %d", s, cnf.RowCnt-sra),
 			fmt.Sprintf(
-				"\n== total rows affected: %d", cnf.rc)))
+				"\n== total rows affected: %d", cnf.RowCnt)))
 	} // log finished with ETL
-	cnf.l.WriteLog(fmt.Sprintf(
+	cnf.L.WriteLog(fmt.Sprintf(
 		"\n====  finished %d seasons between %s and %s | total rows affected: %d",
-		len(szns), startY, endY, cnf.rc,
+		len(szns), startY, endY, cnf.RowCnt,
 	))
 
 	return nil
